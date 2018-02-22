@@ -1,0 +1,35 @@
+{
+  "name": "router",
+  "version": "0.0.0",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "repository": "https://github.com/philipahlberg/router.git",
+  "author": "philipahlberg <23071488+philipahlberg@users.noreply.github.com>",
+  "license": "MIT",
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "concurrently \"rollup -c -w\" \"node build/dev.js\"",
+    "test": "",
+    "build": "rollup -c",
+    "lint": "eslint src",
+    "format": "prettier"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "concurrently": "^3.5.1",
+    "eslint": "^4.18.1",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-import-resolver-node": "^0.3.2",
+    "eslint-plugin-import": "^2.9.0",
+    "eslint-plugin-prettier": "^2.6.0",
+    "koa": "^2.5.0",
+    "koa-static": "^4.0.2",
+    "mocha": "^5.0.1",
+    "prettier": "^1.10.2",
+    "rollup": "^0.56.2",
+    "rollup-plugin-alias": "^1.4.0",
+    "rollup-plugin-commonjs": "^8.3.0",
+    "rollup-plugin-node-resolve": "^3.0.3",
+    "rollup-plugin-uglify": "^3.0.0"
+  }
+}
