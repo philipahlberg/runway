@@ -113,14 +113,17 @@ class ParsedExpression {
   }
 
   all() {
-    return this.keys.reduce((entries, key, i) => {
-      entries[key] = this.values[i];
-      return entries;
+    return this.keys.reduce((object, key, i) => {
+      object[key] = this.values[i];
+      return object;
     }, {});
   }
 
   entries() {
-    return this.keys.map(key => [key, this.get(key)]);
+    let entries = [];
+    for (let i = 0; i < this.keys.length; i++) {
+      entries.push([this.keys[i], this.values[i]]);
+    }
   }
 
   *[Symbol.iterator]() {

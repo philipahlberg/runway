@@ -4,10 +4,9 @@ const EMPTY = Object.create(null);
 
 export class Router {
   constructor(records, target) {
-    console.time('new Router');
     this.views = [];
     this.routes = [];
-    this.view = null;
+    this.activeRoutes = [];
     this.target = target;
     this.routes = new Routes(records);
 
@@ -21,7 +20,6 @@ export class Router {
 
     const url = decodeURIComponent(location.pathname);
     const matched = this.resolve(url);
-    console.timeEnd('new Router');
     this.render(matched, url);
   }
 
@@ -64,82 +62,104 @@ export class Router {
   }
 
   async render(matched, url) {
-    console.time('render');
-    console.time('import');
-    const components = await Promise.all(
+    // Importing early in case both network
+    // and device is slow, but not awaiting
+    // it just yet.
+    const load = Promise.all(
       matched.map(route => route.import())
     );
-    console.timeEnd('import');
 
-    let parent;
-    const length = matched.length;
-    for (let i = 0; i < length; i++) {
-      const route = matched[i];
-      // A view is an existing component from a previous render
-      const view = this.views[i];
-      // The component class
-      const Component = components[i];
-
-      // The view is reusable if it's an instance of the correct component
-      const reusable = view instanceof Component;
-      // Obtain an instance of the component
-      let instance;
-      if (reusable) {
-        instance = view;
+    console.time('render');
+    // Find the index at which the matched routes
+    // differ from the active routes.
+    let start;
+    for (let i = 0; i < matched.length; i++) {
+      const match = matched[i];
+      if (this.activeRoutes.length < i + 1) {
+        start = i;
+        break;
       } else {
-        // If a fresh instance is needed, use the component constructor
-        instance = new Component();
-        // If the fresh instance is replacing an old view,
-        // remove the old view
-        if (parent && view) {
-          parent.removeChild(view);
+        const active = this.activeRoutes[i];
+        if (match !== active) {
+          start = i;
+          break;
         }
-        // Save the new instance in place of the old one
-        this.views[i] = instance;
       }
+    }
 
-      // Create an active route based on the route and url
+    this.activeRoutes = matched;
+
+    // Remove the obsolete elements
+    if (start > 0 && this.views.length > 0) {
+      const el = this.views[start];
+      el.remove();
+      this.views = this.views.slice(0, start);
+    }
+
+    // Create the new elements
+    const components = await load;
+    const elements = components.slice(start)
+      .map(Component => new Component());
+
+    // Combine the newly created elements in order
+    // while being careful not to render them yet
+    for (let k = 0; k < elements.length - 1; k++) {
+      const parent = elements[k];
+      const child = elements[k + 1];
+      parent.append(child);
+    }
+
+    this.views = this.views.concat(elements);
+
+    // In correct order, resolve any new properties
+    // Note: this happens before the new elements are connected
+    for (let k = 0; k < this.views.length; k++) {
+      const view = this.views[k];
+      const route = matched[k];
+      const Component = components[k];
+
       const active = new ActiveRoute(route, url);
-      instance.route = active;
 
-      // Resolve any matching parameters on the component
       const parameters = active.parameters;
-      const properties = Component.properties;
-      if (properties != null) {
+      const options = Component.properties;
+      if (options != null) {
+        // Resolve parameters from paths
         for (const [key, value] of parameters) {
-          if (properties.hasOwnProperty(key)) {
-            instance[key] = value;
+          if (options.hasOwnProperty(key)) {
+            view[key] = value;
+          }
+        }
+
+        // Resolve additional properties from route
+        for (const key in route.properties) {
+          if (options.hasOwnProperty(key)) {
+            const value = route.properties[key];
+            view[key] = value;
           }
         }
       }
 
-      // If the view wasn't reusable, it needs to be
-      // appended, optionally into a slot.
-      if (!reusable && parent != null) {
-        if (route.slot) {
-          instance.setAttribute('slot', route.slot);
-        }
-        parent.appendChild(instance);
+      view.route = active;
+
+      if (route.slot) {
+        view.setAttribute('slot', route.slot);
       }
-      parent = instance;
     }
 
-    // Remove redundant views
-    const views = this.views;
-    for (let i = matched.length; i < views.length; i++) {
-      const view = views[i];
-      view.parentElement.removeChild(view);
-    }
-
-    // Now that the tree of components has been created,
-    // mount it in the DOM
-    if (this.root != null && this.root !== this.views[0]) {
-      this.target.replaceChild(this.views[0], this.root);
+    if (start > 0) {
+      // Connect the new elements to the deepest reused element,
+      // implicitly rendering them
+      this.views[start - 1].append(elements[0]);
     } else {
-      this.target.appendChild(this.views[0]);
+      // Remove anything currently rendered
+      const root = this.target;
+      while (root.firstChild) {
+        root.removeChild(root.firstChild);
+      }
+      // Add the root element to the target
+      this.target.append(this.views[0]);
     }
 
-    this.root = this.views[0];
     console.timeEnd('render');
     this.emit();
   }

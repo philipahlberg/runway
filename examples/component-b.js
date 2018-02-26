@@ -8,12 +8,6 @@ export default class ComponentB extends ProfilingMixin(HTMLElement) {
       }
     }
   }
-
-  connectedCallback() {
-    super.connectedCallback();
-    const props = { param: this.param };
-    this.log({ props });
-  }
 }
 
 customElements.define('component-b', ComponentB);

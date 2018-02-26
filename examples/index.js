@@ -9,11 +9,19 @@ export default new Router([
     children: [
       {
         path: ':param',
-        component: () => import('./component-b.js')
+        component: () => import('./component-b.js'),
+        slot: 'router-view',
+        children: [
+          {
+            path: '',
+            component: C
+          }
+        ]
       },
       {
         path: '',
-        component: C
+        component: C,
+        slot: 'router-view'
       }
     ]
   }

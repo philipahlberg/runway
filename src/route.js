@@ -3,12 +3,14 @@ import { Query } from './query.js';
 import { load, normalize } from './utils.js';
 
 export class Route extends Path {
-  constructor({ path, exact, component, meta, children }) {
-    super(path, exact);
-    this.path = path;
-    this.meta = meta;
-    this.component = component;
-    this.children = children;
+  constructor(options) {
+    super(options.path, options.exact);
+    this.path = options.path;
+    this.component = options.component;
+    this.children = options.children || [];
+    this.slot = options.slot;
+    this.meta = Object.freeze(options.meta || {});
+    this.properties = Object.freeze(options.properties || {});
   }
 
   async import() {
@@ -25,7 +27,11 @@ export class Routes {
 
   define(record, parent) {
     if (parent != null) {
-      record.path = normalize(parent.path + '/' + record.path);
+      if (record.path === '') {
+        record.path = parent.path;
+      } else {
+        record.path = normalize(parent.path + '/' + record.path);
+      }
     }
 
     if (record.children != null) {
