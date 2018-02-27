@@ -12,7 +12,7 @@ export function normalize(path) {
  * An ES2015 class will return false, while ordinary functions,
  * arrow functions, generator functions and async functions return true.
  * @param {object} object the object that is to be inspected
- * @returns {boolean}
+ * @returns {boolean} if the given object is a callable function
  */
 export function isFunction(object) {
   if (!(typeof object === 'function')) {
@@ -30,13 +30,6 @@ export function isFunction(object) {
    */
 
   const tag = object[Symbol.toStringTag];
-  // First it is determined if it's an async or generator function.
-  // Generator functions and classes have the same properties,
-  // so using the tag is needed.
-  // An async function can also be identified with this method, so it
-  // is also done here for convenience.
-  // Ordinary functions, arrow functions and classes cannot be identified
-  // with this method.
   if (tag === 'AsyncFunction' || tag === 'GeneratorFunction') {
     return true;
   } else {

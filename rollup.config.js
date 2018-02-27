@@ -1,15 +1,27 @@
 import resolve from 'rollup-plugin-node-resolve';
-import uglify from 'rollup-plugin-uglify';
+import minify from 'rollup-plugin-uglify';
 
-export default {
-  input: './src/index.js',
-  output: {
-    file: './dist/index.min.js',
-    format: 'es',
-    sourcemap: true
+export default [
+  {
+    input: './src/index.js',
+    output: {
+      file: './dist/index.js',
+      format: 'es'
+    },
+    plugins: [
+      resolve()
+    ]
   },
-  plugins: [
-    resolve(),
-    uglify()
-  ]
-}
+  {
+    input: './src/index.js',
+    output: {
+      file: './dist/index.min.js',
+      format: 'es',
+      sourcemap: true
+    },
+    plugins: [
+      resolve(),
+      minify()
+    ]
+  }
+]

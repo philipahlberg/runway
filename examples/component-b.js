@@ -8,6 +8,15 @@ export default class ComponentB extends ProfilingMixin(HTMLElement) {
       }
     }
   }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.attachShadow({ mode: 'open' });
+    const text = document.createTextNode('ComponentB');
+    this.shadowRoot.append(text);
+    const slot = document.createElement('slot');
+    this.shadowRoot.append(slot);
+  }
 }
 
 customElements.define('component-b', ComponentB);

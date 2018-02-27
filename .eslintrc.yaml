@@ -1,0 +1,16 @@
+# 0 = disabled, 1 = warning, 2 = error
+extends: 
+  - prettier
+  - plugin:import/errors
+  - plugin:import/warnings
+plugins:
+  - import
+env:
+  browser: true
+parserOptions:
+  sourceType: 'module'
+  ecmaVersion: 2017
+settings:
+  import/resolver: node
+rules:
+  import/no-named-as-default: 0

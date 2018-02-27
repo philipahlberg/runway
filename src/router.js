@@ -1,67 +1,89 @@
-import { Routes, ActiveRoute } from './route.js';
+import { Route, ActiveRoute } from './route.js';
 
 const EMPTY = Object.create(null);
 
-export class Router {
+export default class Router {
   constructor(records, target) {
     this.views = [];
-    this.routes = [];
-    this.activeRoutes = [];
-    this.target = target;
-    this.routes = new Routes(records);
-
-    window.addEventListener('popstate', () => {
-      const url = decodeURIComponent(location.pathname);
-      const matched = this.resolve(url);
-      this.render(matched, url);
-    });
+    this.matched = [];
+    this.routes = records.map(record => new Route(record));
+    this.onPopstate = this.onPopstate.bind(this);
 
     window.Router = this;
+    
+    if (target) {
+      this.connect(target);
+    }
+  }
 
+  connect(target) {
+    this.target = target;
+    window.addEventListener('popstate', this.onPopstate);
     const url = decodeURIComponent(location.pathname);
-    const matched = this.resolve(url);
-    this.render(matched, url);
+    const { matched } = this.resolve(url);
+    return this.render(matched);
   }
 
-  push(url, { data, title } = EMPTY) {
+  disconnect() {
+    window.removeEventListener('popstate', this.onPopstate);
+    while (this.views.length > 0) {
+      const view = this.views.pop();
+      view.remove();
+    }
+    this.matched = [];
+    this.target = null;
+  }
+
+  onPopstate() {
+    const url = decodeURIComponent(location.pathname);
+    const { matched } = this.resolve(url);
+    this.render(matched);
+  }
+
+  push(path, { data, title } = EMPTY) {
+    path = decodeURIComponent(path);
+    const { matched, url } = this.resolve(path);
     history.pushState(data, title, url);
-    const path = decodeURIComponent(location.pathname);
-    const matched = this.resolve(path);
-    this.render(matched, path);
+    return this.render(matched);
   }
 
-  replace(url, { data, title } = EMPTY) {
+  replace(path, { data, title } = EMPTY) {
+    path = decodeURIComponent(path);
+    const { matched, url } = this.resolve(path);
     history.replaceState(data, title, url);
-    const path = decodeURIComponent(location.pathname);
-    const matched = this.resolve(path);
-    this.render(matched, path);
+    return this.render(matched);
   }
 
   resolve(url) {
     let matched = [];
-    const flatten = (route) => {
-      let matches = route.matches(url);
-      if (matches) {
+
+    const search = (routes) => {
+      // Find a starting match
+      const route = routes.find(route => route.matches(url));
+      if (route) {
         matched.push(route);
-        if (route.children != null) {
-          for (const child of route.children) {
-            flatten(child);
-          }
+        if (route.redirect) {
+          // transfer any matched parameters
+          const matched = route.matched(url);
+          url = route.transfer(matched, route.redirect);
+          // and start over
+          return this.resolve(url);
+        } else if (route.children) {
+          // Search through the children
+          return search(route.children);
+        } else {
+          // End the search here
+          return { matched, url };
         }
-      }
-      return matches;
-    }
-
-    for (const route of this.routes) {
-      if (flatten(route)) {
-        break;
+      } else {
+        return { matched, url };
       }
     }
 
-    return matched;
+    return search(this.routes);
   }
 
-  async render(matched, url) {
+  async render(matched) {
     // Importing early in case both network
     // and device is slow, but not awaiting
     // it just yet.
@@ -69,17 +91,16 @@ export class Router {
       matched.map(route => route.import())
     );
 
-    console.time('render');
     // Find the index at which the matched routes
     // differ from the active routes.
     let start;
     for (let i = 0; i < matched.length; i++) {
       const match = matched[i];
-      if (this.activeRoutes.length < i + 1) {
+      if (this.matched.length < i + 1) {
         start = i;
         break;
       } else {
-        const active = this.activeRoutes[i];
+        const active = this.matched[i];
         if (match !== active) {
           start = i;
           break;
@@ -87,32 +108,38 @@ export class Router {
       }
     }
 
-    this.activeRoutes = matched;
-
-    // Remove the obsolete elements
-    if (start > 0 && this.views.length > 0) {
-      const el = this.views[start];
-      el.remove();
-      this.views = this.views.slice(0, start);
+    if (start == null) {
+      start = matched.length;
     }
 
-    // Create the new elements
+    this.matched = matched;
+
+    // Remove the obsolete elements
+    const removals = this.views.slice(start);
+    if (removals.length > 0) {
+      removals[0].remove();
+    }
+
+    this.views = this.views.slice(0, start);
+
     const components = await load;
-    const elements = components.slice(start)
+    // Create the new elements
+    const additions = components.slice(start)
       .map(Component => new Component());
 
     // Combine the newly created elements in order
     // while being careful not to render them yet
-    for (let k = 0; k < elements.length - 1; k++) {
-      const parent = elements[k];
-      const child = elements[k + 1];
+    for (let k = 0; k < additions.length - 1; k++) {
+      const parent = additions[k];
+      const child = additions[k + 1];
       parent.append(child);
     }
 
-    this.views = this.views.concat(elements);
+    this.views = this.views.concat(additions);
 
     // In correct order, resolve any new properties
     // Note: this happens before the new elements are connected
+    const url = decodeURIComponent(location.pathname);
     for (let k = 0; k < this.views.length; k++) {
       const view = this.views[k];
       const route = matched[k];
@@ -146,25 +173,17 @@ export class Router {
       }
     }
 
-    if (start > 0) {
-      // Connect the new elements to the deepest reused element,
-      // implicitly rendering them
-      this.views[start - 1].append(elements[0]);
-    } else {
-      // Remove anything currently rendered
-      const root = this.target;
-      while (root.firstChild) {
-        root.removeChild(root.firstChild);
+    // If there are any additions, they need to be rendered
+    if (additions.length > 0) {
+      if (start > 0) {
+        // Some reuse
+        // Connect the new elements to the deepest reused element,
+        // implicitly rendering them
+        this.views[start - 1].append(additions[0]);
+      } else {
+        // No reuse
+        this.target.append(this.views[0]);
       }
-      // Add the root element to the target
-      this.target.append(this.views[0]);
     }
-
-    console.timeEnd('render');
-    this.emit();
-  }
-
-  emit() {
-    window.dispatchEvent(new Event('location-change'));
   }
 }
