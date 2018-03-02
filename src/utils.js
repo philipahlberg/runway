@@ -45,24 +45,37 @@ export function isPromise(object) {
   return object[Symbol.toStringTag] === 'Promise';
 }
 
+export function clone(obj) {
+  return Object.assign({}, obj);
+}
+
+export function freeze(obj) {
+  return Object.freeze(obj);
+}
+
+export function always() {
+  return true;
+}
+
+export const EMPTY = freeze(Object.create(null));
+
 const components = new WeakMap();
 
 /**
- * Resolve an identifier to a class.
- * @param {Promise|Function|String} component The identifier
+ * Resolve an identifier to a constructor.
+ * @param {Promise|Function|String} component the identifier
  * @param {Function} callback
  */
 export function load(component, callback) {
   if (typeof component === 'string') {
     // If it's a string, assume that it has
-    // been defined, and return the class
-    // associated with the tag to allow
-    // uniform callback function signature.
+    // been defined, and return the constructor
+    // from the element registry
     callback(customelements.get(component));
 
   } else if (components.has(component)) {
     // If it has been resolved before,
-    // return the resolved value.
+    // return the resolved value
     callback(components.get(component));
 
   } else if (isFunction(component)) {
@@ -70,16 +83,19 @@ export function load(component, callback) {
     let called = component();
     if (isPromise(called)) {
       // If the function returns a promise,
-      // assume that it is a module and assume
-      // the component is the default export.
+      // assume it either resolves to the
+      // constructor directly, or to a module
+      // wherein the constructor is the default
+      // export
       called.then((m) => {
-        components.set(component, m.default);
-        callback(m.default);
+        let ctor = m.default || m;
+        components.set(component, ctor);
+        callback(ctor);
       });
     } else {
       // If the function call returned something
       // that isn't a promise, assume that it returned
-      // a component directly.
+      // a constructor directly
       components.set(component, called);
       callback(called);
     }

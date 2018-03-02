@@ -17,11 +17,11 @@ class Path {
    * @param {String} input The path to compile
    * @param {Boolean} exact Whether or not the pattern should match anything after the path
    */
-  constructor(path, exact = false) {
+  constructor(path = '', exact = false) {
     // replace any wildcards with
     // their corresponding expression
     path = path.replace(WILDCARD_PATTERN, MATCH_ALL);
-    
+
     let match;
     let keys = [];
     // convert :param to a catch-all group
@@ -52,30 +52,33 @@ class Path {
   }
 
   /**
-   * 
-   * @param {String} path Path to match against.
-   * @return {String} Matched portion of the path. 
+   * Find the matched part of the given path.
+   * @param {String} path path to match against
+   * @return {String} matched portion of the path 
    */
   matched(path) {
-    return this.pattern.exec(path)[0];
+    let matched = this.pattern.exec(path);
+    return matched && matched[0] || '';
   }
 
   /**
-   * @param {String} url The path to get values from
-   * @return {ParsedExpression} A collection of functions for working with the url
+   * Parse a path string for parameter values.
+   * @param {String} path the path to get values from
+   * @return {ParsedExpression}
    */
-  parse(url) {
+  parse(path) {
     return new ParsedExpression(
-      url,
+      path,
       this.pattern,
       this.keys
     );
   }
 
   /**
-   * 
-   * @param {String} target A path, potentially with unresolved parameters 
-   * @param {String} current The path that was matched
+   * Transfer matched parameters in the given url to
+   * the target path, filling in named parameters in if they exist.
+   * @param {String} current a matched url
+   * @param {String} target a path
    * @return {String} The target path with parameters filled in
    */
   transfer(current, target) {
@@ -94,10 +97,9 @@ class Path {
 
 class ParsedExpression {
   constructor(url, pattern, keys) {
-    this.values = pattern.exec(url).slice(1);
     this.url = url;
     this.keys = keys;
-    this.map = new Map();
+    this.values = pattern.exec(url).slice(1);
   }
 
   get(key) {
@@ -124,6 +126,7 @@ class ParsedExpression {
     for (let i = 0; i < this.keys.length; i++) {
       entries.push([this.keys[i], this.values[i]]);
     }
+    return entries;
   }
 
   *[Symbol.iterator]() {
@@ -213,24 +216,37 @@ function isPromise(object) {
   return object[Symbol.toStringTag] === 'Promise';
 }
 
+function clone(obj) {
+  return Object.assign({}, obj);
+}
+
+function freeze(obj) {
+  return Object.freeze(obj);
+}
+
+function always() {
+  return true;
+}
+
+const EMPTY = freeze(Object.create(null));
+
 const components = new WeakMap();
 
 /**
- * Resolve an identifier to a class.
- * @param {Promise|Function|String} component The identifier
+ * Resolve an identifier to a constructor.
+ * @param {Promise|Function|String} component the identifier
  * @param {Function} callback
  */
 function load(component, callback) {
   if (typeof component === 'string') {
     // If it's a string, assume that it has
-    // been defined, and return the class
-    // associated with the tag to allow
-    // uniform callback function signature.
+    // been defined, and return the constructor
+    // from the element registry
     callback(customelements.get(component));
 
   } else if (components.has(component)) {
     // If it has been resolved before,
-    // return the resolved value.
+    // return the resolved value
     callback(components.get(component));
 
   } else if (isFunction(component)) {
@@ -238,16 +254,19 @@ function load(component, callback) {
     let called = component();
     if (isPromise(called)) {
       // If the function returns a promise,
-      // assume that it is a module and assume
-      // the component is the default export.
+      // assume it either resolves to the
+      // constructor directly, or to a module
+      // wherein the constructor is the default
+      // export
       called.then((m) => {
-        components.set(component, m.default);
-        callback(m.default);
+        let ctor = m.default || m;
+        components.set(component, ctor);
+        callback(ctor);
       });
     } else {
       // If the function call returned something
       // that isn't a promise, assume that it returned
-      // a component directly.
+      // a constructor directly
       components.set(component, called);
       callback(called);
     }
@@ -255,9 +274,6 @@ function load(component, callback) {
     callback(component);
   }
 }
-
-const clone = (obj) => Object.assign({}, obj);
-const freeze = (obj) => Object.freeze(obj);
 
 class Route extends Path {
   constructor(options) {
@@ -267,15 +283,17 @@ class Route extends Path {
     this.redirect = options.redirect;
     this.component = options.component;
     this.slot = options.slot;
+    this.guard = options.guard || always;
     this.meta = freeze(options.meta || {});
     this.properties = freeze(options.properties || {});
-    this.children = (options.children || [])
-      .map(record => createChildRoute(clone(record), this));
+    this.children = (options.children || []).map(record =>
+      createChildRoute(clone(record), this)
+    );
   }
 
   async import() {
-    return new Promise((resolve) => {
-      load(this.component, (Component) => resolve(Component));
+    return new Promise(resolve => {
+      load(this.component, Component => resolve(Component));
     });
   }
 }
@@ -302,7 +320,7 @@ function createChildRoute(record, parent) {
   return new Route(record);
 }
 
-class ActiveRoute {
+class ActivatedRoute {
   constructor(route, url) {
     this.parameters = route.parse(url);
     this.matched = route.matched(url);
@@ -310,8 +328,6 @@ class ActiveRoute {
     this.hash = location.hash.substring(1);
   }
 }
-
-const EMPTY = Object.create(null);
 
 class Router {
   constructor(records, target) {
@@ -321,7 +337,7 @@ class Router {
     this.onPopstate = this.onPopstate.bind(this);
 
     window.Router = this;
-    
+
     if (target) {
       this.connect(target);
     }
@@ -330,75 +346,73 @@ class Router {
   connect(target) {
     this.target = target;
     window.addEventListener('popstate', this.onPopstate);
-    const url = decodeURIComponent(location.pathname);
-    const { matched } = this.resolve(url);
+    const path = decodeURIComponent(location.pathname);
+    const { matched, url } = this.match(path);
+    history.replaceState(null, null, url);
     return this.render(matched);
   }
 
   disconnect() {
     window.removeEventListener('popstate', this.onPopstate);
-    while (this.views.length > 0) {
-      const view = this.views.pop();
-      view.remove();
-    }
+    this.teardown();
     this.matched = [];
     this.target = null;
   }
 
   onPopstate() {
-    const url = decodeURIComponent(location.pathname);
-    const { matched } = this.resolve(url);
+    const path = decodeURIComponent(location.pathname);
+    const { matched } = this.match(path);
     this.render(matched);
   }
 
-  push(path, { data, title } = EMPTY) {
-    path = decodeURIComponent(path);
-    const { matched, url } = this.resolve(path);
-    history.pushState(data, title, url);
+  push(url, { data, title } = EMPTY) {
+    url = decodeURIComponent(url);
+    const { matched, path } = this.match(url);
+    history.pushState(data, title, path);
     return this.render(matched);
   }
 
-  replace(path, { data, title } = EMPTY) {
-    path = decodeURIComponent(path);
-    const { matched, url } = this.resolve(path);
-    history.replaceState(data, title, url);
+  replace(url, { data, title } = EMPTY) {
+    url = decodeURIComponent(url);
+    const { matched, path } = this.match(url);
+    history.replaceState(data, title, path);
     return this.render(matched);
   }
 
-  resolve(url) {
-    let matched = [];
-
-    const search = (routes) => {
+  match(path) {
+    const search = (routes, matched) => {
       // Find a starting match
-      const route = routes.find(route => route.matches(url));
+      const route = routes
+        .find(r => r.matches(path) || r.guard());
+
       if (route) {
         matched.push(route);
-        if (route.redirect) {
+        if (route.redirect != null) {
           // transfer any matched parameters
-          const matched = route.matched(url);
-          url = route.transfer(matched, route.redirect);
+          const matched = route.matched(path);
+          const redirected = route.transfer(matched, route.redirect);
           // and start over
-          return this.resolve(url);
+          return this.match(redirected);
         } else if (route.children) {
           // Search through the children
-          return search(route.children);
+          return search(route.children, matched);
         } else {
-          // End the search here
-          return { matched, url };
+          return { matched, path };
         }
       } else {
-        return { matched, url };
+        // End the search here
+        return { matched, path };
       }
     };
 
-    return search(this.routes);
+    return search(this.routes, []);
   }
 
   async render(matched) {
     // Importing early in case both network
     // and device is slow, but not awaiting
     // it just yet.
-    const load = Promise.all(
+    const load$$1 = Promise.all(
       matched.map(route => route.import())
     );
 
@@ -427,22 +441,23 @@ class Router {
 
     // Remove the obsolete elements
     const removals = this.views.slice(start);
-    if (removals.length > 0) {
-      removals[0].remove();
+    while (removals.length > 0) {
+      const element = removals.pop();
+      element.remove();
     }
 
     this.views = this.views.slice(0, start);
 
-    const components = await load;
+    const components = await load$$1;
     // Create the new elements
     const additions = components.slice(start)
       .map(Component => new Component());
 
     // Combine the newly created elements in order
     // while being careful not to render them yet
-    for (let k = 0; k < additions.length - 1; k++) {
-      const parent = additions[k];
-      const child = additions[k + 1];
+    for (let i = 0; i < additions.length - 1; i++) {
+      const parent = additions[i];
+      const child = additions[i + 1];
       parent.append(child);
     }
 
@@ -451,12 +466,12 @@ class Router {
     // In correct order, resolve any new properties
     // Note: this happens before the new elements are connected
     const url = decodeURIComponent(location.pathname);
-    for (let k = 0; k < this.views.length; k++) {
-      const view = this.views[k];
-      const route = matched[k];
-      const Component = components[k];
+    for (let i = 0; i < this.views.length; i++) {
+      const view = this.views[i];
+      const route = matched[i];
+      const Component = components[i];
 
-      const active = new ActiveRoute(route, url);
+      const active = new ActivatedRoute(route, url);
 
       const parameters = active.parameters;
       const options = Component.properties;
@@ -497,6 +512,14 @@ class Router {
       }
     }
   }
+
+  teardown() {
+    while (this.views.length > 0) {
+      const view = this.views.pop();
+      view.remove();
+    }
+  }
 }
 
 export default Router;
+export { Path, Query, Route };

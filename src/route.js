@@ -1,9 +1,14 @@
 import { Path } from './path.js';
 import { Query } from './query.js';
-import { load, normalize, isFunction, isPromise } from './utils.js';
-
-const clone = (obj) => Object.assign({}, obj);
-const freeze = (obj) => Object.freeze(obj);
+import {
+  load,
+  normalize,
+  clone,
+  freeze,
+  always,
+  isFunction,
+  isPromise
+} from './utils.js';
 
 export class Route extends Path {
   constructor(options) {
@@ -13,15 +18,17 @@ export class Route extends Path {
     this.redirect = options.redirect;
     this.component = options.component;
     this.slot = options.slot;
+    this.guard = options.guard || always;
     this.meta = freeze(options.meta || {});
     this.properties = freeze(options.properties || {});
-    this.children = (options.children || [])
-      .map(record => createChildRoute(clone(record), this));
+    this.children = (options.children || []).map(record =>
+      createChildRoute(clone(record), this)
+    );
   }
 
   async import() {
-    return new Promise((resolve) => {
-      load(this.component, (Component) => resolve(Component));
+    return new Promise(resolve => {
+      load(this.component, Component => resolve(Component));
     });
   }
 }
@@ -48,7 +55,7 @@ function createChildRoute(record, parent) {
   return new Route(record);
 }
 
-export class ActiveRoute {
+export class ActivatedRoute {
   constructor(route, url) {
     this.parameters = route.parse(url);
     this.matched = route.matched(url);

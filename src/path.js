@@ -17,11 +17,11 @@ export class Path {
    * @param {String} input The path to compile
    * @param {Boolean} exact Whether or not the pattern should match anything after the path
    */
-  constructor(path, exact = false) {
+  constructor(path = '', exact = false) {
     // replace any wildcards with
     // their corresponding expression
     path = path.replace(WILDCARD_PATTERN, MATCH_ALL);
-    
+
     let match;
     let keys = [];
     // convert :param to a catch-all group
@@ -52,30 +52,33 @@ export class Path {
   }
 
   /**
-   * 
-   * @param {String} path Path to match against.
-   * @return {String} Matched portion of the path. 
+   * Find the matched part of the given path.
+   * @param {String} path path to match against
+   * @return {String} matched portion of the path 
    */
   matched(path) {
-    return this.pattern.exec(path)[0];
+    let matched = this.pattern.exec(path);
+    return matched && matched[0] || '';
   }
 
   /**
-   * @param {String} url The path to get values from
-   * @return {ParsedExpression} A collection of functions for working with the url
+   * Parse a path string for parameter values.
+   * @param {String} path the path to get values from
+   * @return {ParsedExpression}
    */
-  parse(url) {
+  parse(path) {
     return new ParsedExpression(
-      url,
+      path,
       this.pattern,
       this.keys
     );
   }
 
   /**
-   * 
-   * @param {String} target A path, potentially with unresolved parameters 
-   * @param {String} current The path that was matched
+   * Transfer matched parameters in the given url to
+   * the target path, filling in named parameters in if they exist.
+   * @param {String} current a matched url
+   * @param {String} target a path
    * @return {String} The target path with parameters filled in
    */
   transfer(current, target) {
@@ -94,10 +97,9 @@ export class Path {
 
 class ParsedExpression {
   constructor(url, pattern, keys) {
-    this.values = pattern.exec(url).slice(1);
     this.url = url;
     this.keys = keys;
-    this.map = new Map();
+    this.values = pattern.exec(url).slice(1);
   }
 
   get(key) {
@@ -124,6 +126,7 @@ class ParsedExpression {
     for (let i = 0; i < this.keys.length; i++) {
       entries.push([this.keys[i], this.values[i]]);
     }
+    return entries;
   }
 
   *[Symbol.iterator]() {
