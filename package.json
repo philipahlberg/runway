@@ -8,20 +8,29 @@
   "license": "MIT",
   "scripts": {
     "start": "npm run dev",
-    "dev": "concurrently \"rollup -c -w\" \"node build/dev.js\"",
-    "test": "",
+    "dev": "concurrently \"rollup -c scripts/development.config.js -w\" \"node scripts/dev.js\"",
+    "test": "karma start",
     "build": "rollup -c",
     "lint": "eslint src",
-    "format": "prettier"
+    "format": "prettier",
+    "examples": "node scripts/examples.js"
   },
   "devDependencies": {
     "chai": "^4.1.2",
     "concurrently": "^3.5.1",
+    "es6-promise": "^4.2.4",
     "eslint": "^4.18.1",
     "eslint-config-prettier": "^2.9.0",
     "eslint-import-resolver-node": "^0.3.2",
     "eslint-plugin-import": "^2.9.0",
     "eslint-plugin-prettier": "^2.6.0",
+    "karma": "^2.0.0",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-firefox-launcher": "^1.1.0",
+    "karma-mocha": "^1.3.0",
+    "karma-sourcemap-loader": "^0.3.7",
+    "karma-webpack": "^2.0.13",
     "koa": "^2.5.0",
     "koa-static": "^4.0.2",
     "mocha": "^5.0.1",
@@ -30,6 +39,7 @@
     "rollup-plugin-alias": "^1.4.0",
     "rollup-plugin-commonjs": "^8.3.0",
     "rollup-plugin-node-resolve": "^3.0.3",
-    "rollup-plugin-uglify": "^3.0.0"
+    "rollup-plugin-uglify": "^3.0.0",
+    "webpack": "^4.0.1"
   }
 }
