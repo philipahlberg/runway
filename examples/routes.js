@@ -26,6 +26,10 @@ export default new Router([
     ]
   },
   {
+    path: '/deprecated',
+    redirect: '/login'
+  },
+  {
     path: '/',
     component: Dashboard
   }

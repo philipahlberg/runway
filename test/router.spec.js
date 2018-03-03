@@ -28,14 +28,14 @@ describe('Router', () => {
     //   await Promise.resolve();
     //   await Promise.resolve();
 
-    //   expect(router.views).to.have.lengthOf(1);
+    //   expect(router.elements).to.have.lengthOf(1);
     // });
 
     it('does not render if a DOM target is not given', () => {
       const router = new Router([
         { path: '/', component: SimpleComponent }
       ]);
-      expect(router.views).to.be.empty;
+      expect(router.elements).to.be.empty;
     });
   });
 
@@ -48,7 +48,7 @@ describe('Router', () => {
       const outlet = div();
       await router.connect(outlet);
       const children = Array.from(outlet.children);
-      expect(children).to.deep.equal(router.views);
+      expect(children).to.deep.equal(router.elements);
     });
   });
 
@@ -63,7 +63,7 @@ describe('Router', () => {
       expect(outlet.firstChild).to.exist;
       router.disconnect();
       expect(outlet.firstChild).to.be.null;
-      expect(router.views).to.be.empty;
+      expect(router.elements).to.be.empty;
     });
   });
 
@@ -73,9 +73,9 @@ describe('Router', () => {
         { path: '/a' },
         { path: '/abc' }
       ]);
-  
-      const { matched, url } = router.match('/a');
-      expect(url).to.equal('/a');
+
+      const { matched, path } = router.match('/a');
+      expect(path).to.equal('/a');
       expect(matched).to.be.an('array').that.has.lengthOf(1);
 
       const route = matched[0];
@@ -88,8 +88,8 @@ describe('Router', () => {
         { path: '/b' }
       ]);
 
-      const { matched, url } = router.match('/a');
-      expect(url).to.equal('/b');
+      const { matched, path } = router.match('/a');
+      expect(path).to.equal('/b');
       expect(matched).to.be.an('array').that.has.lengthOf(1);
 
       const route = matched[0];

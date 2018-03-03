@@ -6,6 +6,23 @@ import {
 } from './components.js';
 
 describe('Route', () => {
+  describe('.import', () => {
+    it('resolves an ordinary component', async () => {
+      const Component = await Route.import(SimpleComponent);
+      expect(Component).to.equal(SimpleComponent);
+    });
+
+    it('resolves a string', async () => {
+      const Component = await Route.import('simple-component');
+      expect(Component).to.equal(SimpleComponent);
+    });
+
+    it('resolves an async component', async () => {
+      const Component = await Route.import(AsyncComponent);
+      expect(Component).to.equal(SimpleComponent);
+    });
+  });
+
   describe('#matches', () => {
     it('matches a simple route', () => {
       const route = new Route({ path: '/' });
@@ -32,6 +49,12 @@ describe('Route', () => {
   describe('#import', async () => {
     it('resolves an ordinary component', async () => {
       const route = new Route({ component: SimpleComponent });
+      const Component = await route.import();
+      expect(Component).to.equal(SimpleComponent);
+    });
+
+    it('resolves a string', async () => {
+      const route = new Route({ component: 'simple-component' });
       const Component = await route.import();
       expect(Component).to.equal(SimpleComponent);
     });
