@@ -1,3 +1,36 @@
+class EventEmitter {
+    constructor() {
+        this.map = new Map();
+    }
+    on(type, listener) {
+        let listeners;
+        if (!this.map.has(type)) {
+            listeners = new Set();
+            this.map.set(type, listeners);
+        }
+        else {
+            listeners = this.map.get(type);
+        }
+        listeners.add(listener);
+    }
+    off(type, listener) {
+        if (!this.map.has(type)) {
+            return;
+        }
+        const listeners = this.map.get(type);
+        listeners.delete(listener);
+    }
+    emit(type, detail) {
+        if (!this.map.has(type)) {
+            return;
+        }
+        const listeners = this.map.get(type);
+        for (const listener of listeners) {
+            listener(detail);
+        }
+    }
+}
+
 const MATCH_ALL = '[^/]*';
 const CATCH_ALL = '([^/]+)';
 const PARAMETER_PATTERN = /:([^\/]+)/;
@@ -111,9 +144,6 @@ class Query extends Map {
     static from(object) {
         return new Query(Object.entries(object));
     }
-    static of(...pairs) {
-        return new Query(pairs);
-    }
     static parse(string) {
         if (string.startsWith('?')) {
             string = string.substring(1);
@@ -214,16 +244,21 @@ class Route extends Path {
         }
     }
     constructor(record) {
-        super(record.path, record.exact);
-        this.path = record.path;
-        this.exact = record.exact === true;
-        this.redirect = record.redirect;
-        this.component = record.component;
-        this.slot = record.slot;
-        this.guard = record.guard || always;
-        this.meta = freeze(record.meta || {});
-        this.properties = freeze(record.properties || {});
-        this.children = (record.children || []).map(child => createChildRoute(clone(child), this));
+        let { path, component, exact, redirect, slot, guard, meta, properties, children } = record;
+        if (exact == null) {
+            exact = (children == null ||
+                children.length === 0);
+        }
+        super(path, exact);
+        this.path = path;
+        this.exact = exact;
+        this.redirect = redirect;
+        this.component = component;
+        this.slot = slot;
+        this.guard = guard || always;
+        this.meta = freeze(meta || {});
+        this.properties = freeze(properties || {});
+        this.children = (children || []).map(child => createChildRoute(clone(child), this));
     }
     async import() {
         if (this.resolved == null) {
@@ -255,32 +290,29 @@ function createChildRoute(record, parent) {
             record.redirect = normalize(parent.path + '/' + record.redirect);
         }
     }
-    if (record.children == null) {
-        record.exact = true;
-    }
     return new Route(record);
 }
 
-class Router {
-    constructor(records, target) {
+class Router extends EventEmitter {
+    constructor(records) {
+        super();
         this.isConnected = false;
         this.elements = [];
         this.matched = [];
+        this.middleware = [];
         this.routes = records.map(record => new Route(record));
         this.onPopstate = this.onPopstate.bind(this);
         Router.instance = this;
-        if (target) {
-            this.connect(target);
-        }
     }
-    connect(target) {
+    async connect(target) {
         this.isConnected = true;
         this.target = target;
         window.addEventListener('popstate', this.onPopstate);
         const currentPath = decodeURIComponent(location.pathname);
         const { matched, path } = this.match(currentPath);
         history.replaceState(history.state, document.title, path);
-        return this.render(matched);
+        await this.render(matched);
+        this.emit('connect');
     }
     disconnect() {
         this.isConnected = false;
@@ -288,10 +320,15 @@ class Router {
         this.teardown();
         this.matched = [];
         this.target = undefined;
+        this.emit('disconnect');
     }
     onPopstate() {
-        const path = decodeURIComponent(location.pathname);
-        const { matched } = this.match(path);
+        const to = decodeURIComponent(location.pathname);
+        const { matched, path } = this.match(to);
+        if (to !== path) {
+            history.replaceState(history.state, document.title, path);
+        }
+        this.emit('pop');
         this.render(matched);
     }
     push(to, options = EMPTY) {
@@ -299,6 +336,7 @@ class Router {
         const { matched, path } = this.match(to);
         const { data, title } = options;
         history.pushState(data, title, path);
+        this.emit('push');
         return this.render(matched);
     }
     replace(to, options = EMPTY) {
@@ -306,7 +344,13 @@ class Router {
         const { matched, path } = this.match(to);
         const { data, title } = options;
         history.replaceState(data, title, path);
+        this.emit('replace');
         return this.render(matched);
+    }
+    pop(entries = -1) {
+        // triggers onPopstate(), so no need to render
+        // in this method call
+        history.go(entries);
     }
     search(path, routes, matched) {
         const route = routes
@@ -430,6 +474,7 @@ class Router {
                 this.target.appendChild(this.elements[0]);
             }
         }
+        this.emit('render');
     }
     teardown() {
         while (this.elements.length > 0) {

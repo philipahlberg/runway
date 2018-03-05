@@ -28,7 +28,7 @@ export class Path {
     // replace any wildcards with
     // their corresponding expression
     let temporary = path.replace(WILDCARD_PATTERN, MATCH_ALL);
-    
+
     let match: RegExpExecArray | null;
     let keys: string[] = [];
     // convert :param to a catch-all group
@@ -37,11 +37,11 @@ export class Path {
       temporary = temporary.replace(match[0], CATCH_ALL);
       keys.push(match[1]);
     }
-    
+
     if (!temporary.endsWith('/')) {
       temporary += MATCH_TRAILING_SLASH;
     }
-    
+
     temporary = exact ? `^${temporary}$` : `^${temporary}`;
     const pattern = new RegExp(temporary, 'i');
 
@@ -67,7 +67,7 @@ export class Path {
   /**
    * Parse a path string for parameter values.
    */
-  parse(path: string) {
+  parse(path: string): Parameters {
     return new Parameters(
       path,
       this.pattern,
@@ -95,8 +95,8 @@ export class Path {
   }
 }
 
-export type StringDictionary = { [key: string]: string };
-export type StringTuple = [string, string];
+export type Dictionary = { [key: string]: string };
+export type Tuple<T> = [T, T];
 
 export class Parameters {
   path: string;
@@ -121,16 +121,16 @@ export class Parameters {
     return this.get(key) !== undefined;
   }
 
-  entries(): StringTuple[] {
-    let entries: StringTuple[] = [];
+  entries(): Tuple<string>[] {
+    let entries: Tuple<string>[] = [];
     for (let i = 0; i < this.keys.length; i++) {
       entries.push([this.keys[i], this.values[i]]);
     }
     return entries;
   }
 
-  all(): StringDictionary {
-    return this.keys.reduce((object: StringDictionary, key: string, i) => {
+  all(): Dictionary {
+    return this.keys.reduce((object: Dictionary, key: string, i) => {
       object[key] = this.values[i];
       return object;
     }, {});

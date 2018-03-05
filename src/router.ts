@@ -1,3 +1,4 @@
+import EventEmitter from './event-emitter';
 import { Record, Route } from './route';
 import { EMPTY } from './utils';
 
@@ -16,36 +17,36 @@ export interface NavigationOptions {
   title: string;
 }
 
-export default class Router {
+export default class Router extends EventEmitter {
   static instance: Router;
   elements: HTMLElement[];
   matched: Route[];
   routes: Route[];
-  target?: HTMLElement;
+  middleware: Function[];
   isConnected: boolean;
+  target?: HTMLElement;
 
-  constructor(records: Record[], target?: HTMLElement) {
+  constructor(records: Record[]) {
+    super();
     this.isConnected = false;
     this.elements = [];
     this.matched = [];
+    this.middleware = [];
     this.routes = records.map(record => new Route(record));
     this.onPopstate = this.onPopstate.bind(this);
-
     Router.instance = this;
-
-    if (target) {
-      this.connect(target);
-    }
   }
 
-  connect(target: HTMLElement) {
+  async connect(target: HTMLElement) {
     this.isConnected = true;
     this.target = target;
     window.addEventListener('popstate', this.onPopstate);
     const currentPath = decodeURIComponent(location.pathname);
     const { matched, path } = this.match(currentPath);
+
     history.replaceState(history.state, document.title, path);
-    return this.render(matched);
+    await this.render(matched);
+    this.emit('connect');
   }
 
   disconnect() {
@@ -54,11 +55,16 @@ export default class Router {
     this.teardown();
     this.matched = [];
     this.target = undefined;
+    this.emit('disconnect');
   }
 
   onPopstate() {
-    const path = decodeURIComponent(location.pathname);
-    const { matched } = this.match(path);
+    const to = decodeURIComponent(location.pathname);
+    const { matched, path } = this.match(to);
+    if (to !== path) {
+      history.replaceState(history.state, document.title, path);
+    }
+    this.emit('pop');
     this.render(matched);
   }
 
@@ -67,6 +73,7 @@ export default class Router {
     const { matched, path } = this.match(to);
     const { data, title } = options;
     history.pushState(data, title, path);
+    this.emit('push');
     return this.render(matched);
   }
 
@@ -75,7 +82,14 @@ export default class Router {
     const { matched, path } = this.match(to);
     const { data, title } = options;
     history.replaceState(data, title, path);
+    this.emit('replace');
     return this.render(matched);
+  }
+
+  pop(entries: number = -1) {
+    // triggers onPopstate(), so no need to render
+    // in this method call
+    history.go(entries);
   }
 
   search(path: string, routes: Route[], matched: Route[]): SearchResult {
@@ -176,9 +190,7 @@ export default class Router {
       const route = matched[i];
       // TODO: fix type
       const Component: any = components[i];
-
       const snapshot = route.snapshot(url);
-
       const parameters = snapshot.parameters;
       const options = Component.properties;
       if (options != undefined) {
@@ -217,6 +229,8 @@ export default class Router {
         this.target.appendChild(this.elements[0]);
       }
     }
+
+    this.emit('render');
   }
 
   teardown() {

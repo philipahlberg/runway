@@ -12,11 +12,8 @@ export default class Dashboard extends ProfilingMixin(HTMLElement) {
       }
       </style>
       <h1>Dashboard</h1>
-      <slot name="detail">
-        Details appear here.
-      </slot>
       <slot>
-        Other content appears here.
+        Nothing to see here.
       </slot>
     `;
   }

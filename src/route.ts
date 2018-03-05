@@ -77,16 +77,35 @@ export class Route extends Path {
   }
 
   constructor(record: Record) {
-    super(record.path, record.exact);
-    this.path = record.path;
-    this.exact = record.exact === true;
-    this.redirect = record.redirect;
-    this.component = record.component;
-    this.slot = record.slot;
-    this.guard = record.guard || always;
-    this.meta = freeze(record.meta || {});
-    this.properties = freeze(record.properties || {});
-    this.children = (record.children || []).map(child =>
+    let {
+      path,
+      component,
+      exact,
+      redirect,
+      slot,
+      guard,
+      meta,
+      properties,
+      children
+    } = record;
+
+    if (exact == null) {
+      exact = (
+        children == null ||
+        children.length === 0
+      );
+    }
+
+    super(path, exact);
+    this.path = path;
+    this.exact = exact;
+    this.redirect = redirect;
+    this.component = component;
+    this.slot = slot;
+    this.guard = guard || always;
+    this.meta = freeze(meta || {});
+    this.properties = freeze(properties || {});
+    this.children = (children || []).map(child =>
       createChildRoute(clone(child), this)
     );
   }
@@ -121,10 +140,6 @@ function createChildRoute(record: Record, parent: Route): Route {
     } else {
       record.redirect = normalize(parent.path + '/' + record.redirect);
     }
-  }
-
-  if (record.children == null) {
-    record.exact = true;
   }
 
   return new Route(record);

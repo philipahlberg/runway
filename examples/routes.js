@@ -5,10 +5,18 @@ import Users from './users.js';
 import User from './user.js';
 import { loggedIn } from './auth.js';
 
-export default new Router([
+const router = new Router([
+  {
+    path: '/',
+    redirect: '/dashboard'
+  },
   {
     path: '/login',
     component: Login
+  },
+  {
+    path: '/dashboard',
+    component: Dashboard
   },
   {
     path: '/admin',
@@ -24,13 +32,9 @@ export default new Router([
         component: User
       }
     ]
-  },
-  {
-    path: '/deprecated',
-    redirect: '/login'
-  },
-  {
-    path: '/',
-    component: Dashboard
   }
-], document.body);
+]);
+
+router.connect(document.body);
+
+export default router;

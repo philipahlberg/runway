@@ -47,10 +47,13 @@ export default class RouterLinkElement extends HTMLElement {
     } else {
       this.to = this.getAttribute('to') || '';
     }
+
+    this.router.on('navigation', this.onChange);
   }
 
   disconnectedCallback() {
     this.removeEventListener('click', this.onClick);
+    this.router.off('navigation', this.onChange);
   }
 
   toggleAttribute(name: string, predicate: boolean) {
