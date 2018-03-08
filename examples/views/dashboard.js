@@ -1,9 +1,16 @@
-import { ProfilingMixin } from './profiling-mixin.js';
+export default class Dashboard extends HTMLElement {
+  static get properties() {
+    return {
+      user: {
+        type: Object
+      }
+    }
+  }
 
-export default class Dashboard extends ProfilingMixin(HTMLElement) {
   connectedCallback() {
-    super.connectedCallback();
     this.attachShadow({ mode: 'open' });
+    const user = this.user;
+
     this.shadowRoot.innerHTML = `
       <style>
       :host {
@@ -12,9 +19,7 @@ export default class Dashboard extends ProfilingMixin(HTMLElement) {
       }
       </style>
       <h1>Dashboard</h1>
-      <slot>
-        Nothing to see here.
-      </slot>
+      Hello, ${user.signedIn ? user.name : 'guest'}!
     `;
   }
 }

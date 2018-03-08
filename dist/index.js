@@ -40,11 +40,6 @@ const MATCH_TRAILING_SLASH = '(?:[\/]?(?=$))?';
 // implements '**' as a wildcard
 const WILDCARD_PATTERN = /\*\*/g;
 class Path {
-    /**
-     *
-     * @param input The path to compile
-     * @param exact Whether or not the pattern should match anything after the path
-     */
     constructor(path = '', exact = false) {
         this.path = path;
         this.exact = exact;
@@ -56,7 +51,9 @@ class Path {
         // convert :param to a catch-all group
         // and save the keys
         while ((match = PARAMETER_PATTERN.exec(temporary)) != null) {
+            // match[0] is the entire declaration, e. g. ':param'
             temporary = temporary.replace(match[0], CATCH_ALL);
+            // match[1] is the name of the parameter, e. g. 'param'
             keys.push(match[1]);
         }
         if (!temporary.endsWith('/')) {
@@ -89,9 +86,6 @@ class Path {
     /**
      * Transfer matched parameters in the given url to
      * the target path, filling in named parameters in if they exist.
-     * @param {String} from a matched url
-     * @param {String} to a path
-     * @return {String} The target path with parameters filled in
      */
     transfer(from, to) {
         const values = (this.pattern.exec(from) || []).slice(1);
@@ -208,12 +202,35 @@ function clone(object) {
 function freeze(object) {
     return Object.freeze(object);
 }
+function empty() {
+    return Object.create(null);
+}
 function always() {
     return true;
 }
 const EMPTY = freeze(Object.create(null));
 
 class Route extends Path {
+    constructor(record) {
+        let { path, component, exact, redirect, slot, guard, properties, children } = record;
+        // Path should be exact if the route
+        // does not have any children,
+        // but only if the record does not
+        // declare anything
+        if (exact == null) {
+            exact = (children == null ||
+                children.length === 0);
+        }
+        super(path, exact);
+        this.path = path;
+        this.exact = exact;
+        this.redirect = redirect;
+        this.component = component;
+        this.slot = slot;
+        this.guard = guard || always;
+        this.properties = freeze(properties || empty);
+        this.children = (children || []).map(child => createChildRoute(clone(child), this));
+    }
     static async import(identifier) {
         if (typeof identifier === 'string') {
             // If it's a string, assume that it has
@@ -243,28 +260,15 @@ class Route extends Path {
             return identifier;
         }
     }
-    constructor(record) {
-        let { path, component, exact, redirect, slot, guard, meta, properties, children } = record;
-        if (exact == null) {
-            exact = (children == null ||
-                children.length === 0);
-        }
-        super(path, exact);
-        this.path = path;
-        this.exact = exact;
-        this.redirect = redirect;
-        this.component = component;
-        this.slot = slot;
-        this.guard = guard || always;
-        this.meta = freeze(meta || {});
-        this.properties = freeze(properties || {});
-        this.children = (children || []).map(child => createChildRoute(clone(child), this));
-    }
     async import() {
-        if (this.resolved == null) {
-            this.resolved = await Route.import(this.component);
+        if (Route.cache.has(this.component)) {
+            return Route.cache.get(this.component);
         }
-        return this.resolved;
+        else {
+            let ctor = await Route.import(this.component);
+            Route.cache.set(this.component, ctor);
+            return ctor;
+        }
     }
     snapshot(path) {
         return freeze({
@@ -275,13 +279,17 @@ class Route extends Path {
         });
     }
 }
+Route.cache = new Map();
 function createChildRoute(record, parent) {
     if (record.path === '') {
+        // If the path is empty, simply copy the parent path
         record.path = parent.path;
     }
     else {
+        // Otherwise, prepend the parent path
         record.path = normalize(parent.path + '/' + record.path);
     }
+    // Same idea with redirect
     if (record.redirect != null) {
         if (record.redirect === '') {
             record.redirect = parent.path;
@@ -438,10 +446,10 @@ class Router extends EventEmitter {
             const route = matched[i];
             // TODO: fix type
             const Component = components[i];
-            const snapshot = route.snapshot(url);
-            const parameters = snapshot.parameters;
             const options = Component.properties;
             if (options != undefined) {
+                const snapshot = route.snapshot(url);
+                const parameters = snapshot.parameters;
                 // Resolve parameters from paths
                 for (const [key, value] of parameters) {
                     if (options.hasOwnProperty(key)) {
@@ -449,14 +457,14 @@ class Router extends EventEmitter {
                     }
                 }
                 // Resolve additional properties from route
-                for (const key in route.properties) {
+                const properties = route.properties(snapshot);
+                for (const key in properties) {
                     if (options.hasOwnProperty(key)) {
-                        const value = route.properties[key];
+                        const value = properties[key];
                         element[key] = value;
                     }
                 }
             }
-            element.route = snapshot;
             if (route.slot) {
                 element.setAttribute('slot', route.slot);
             }
@@ -484,5 +492,121 @@ class Router extends EventEmitter {
     }
 }
 
+function InstallMixin(Base) {
+    return class extends Base {
+        static install() {
+            customElements.define(this.tagName, this);
+        }
+    };
+}
+class RouterLink extends InstallMixin(HTMLElement) {
+    constructor() {
+        super();
+        this.router = Router.instance;
+        this.onClick = this.onClick.bind(this);
+        this.onChange = this.onChange.bind(this);
+    }
+    set exact(v) {
+        this.toggleAttribute('exact', v);
+    }
+    get exact() {
+        return this.hasAttribute('exact');
+    }
+    set active(v) {
+        this.toggleAttribute('active', v);
+    }
+    get active() {
+        return this.hasAttribute('active');
+    }
+    set disabled(v) {
+        this.toggleAttribute('disabled', v);
+    }
+    get disabled() {
+        return this.hasAttribute('disabled');
+    }
+    attributesChangedCallback(attr, oldValue, newValue) {
+        if (attr === 'disabled') {
+            const hasValue = newValue != null;
+            if (hasValue) {
+                this.active = false;
+                this.router.off('render', this.onChange);
+            }
+            else {
+                this.router.on('render', this.onChange);
+                this.onChange();
+            }
+        }
+    }
+    connectedCallback() {
+        let link = this.querySelector('a');
+        if (link != null) {
+            this.to = link.pathname;
+        }
+        else if (this.to != null) {
+            this.setAttribute('to', this.to);
+        }
+        else {
+            this.to = this.getAttribute('to') || '';
+        }
+        this.addEventListener('click', this.onClick);
+        this.router.on('render', this.onChange);
+        this.onChange();
+    }
+    disconnectedCallback() {
+        this.removeEventListener('click', this.onClick);
+        this.router.off('render', this.onChange);
+    }
+    toggleAttribute(name, predicate) {
+        if (predicate) {
+            this.setAttribute(name, '');
+        }
+        else {
+            this.removeAttribute(name);
+        }
+    }
+    onClick(event) {
+        // Ignore clicks with modifiers
+        if (event.metaKey ||
+            event.altKey ||
+            event.ctrlKey ||
+            event.shiftKey) {
+            return;
+        }
+        // Ignore prevented clicks
+        if (event.defaultPrevented) {
+            return;
+        }
+        // Ignore right mouse button clicks
+        if (event.button !== undefined &&
+            event.button !== 0) {
+            return;
+        }
+        event.preventDefault();
+        if (this.disabled || !this.to) {
+            return;
+        }
+        else {
+            this.router.push(this.to);
+        }
+    }
+    onChange() {
+        if (!this.to) {
+            this.active = false;
+            return;
+        }
+        const url = decodeURIComponent(location.pathname);
+        if (this.to.startsWith('/')) {
+            this.active = this.exact
+                ? url === this.to
+                : url.startsWith(this.to);
+        }
+        else {
+            this.active = url.endsWith(this.to);
+        }
+    }
+}
+RouterLink.observedAttributes = ['disabled'];
+RouterLink.tagName = 'router-link';
+
 export default Router;
-export { Path, Query, Route };
+export { Path, Query, Route, RouterLink };

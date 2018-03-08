@@ -1,18 +1,20 @@
 import Router from './router';
 
-export default class RouterLinkElement extends HTMLElement {
-  static install() {
-    customElements.define('router-link', this);
-  }
-
+export class RouterLink extends HTMLElement {
+  static observedAttributes = ['disabled'];
+  static tagName = 'router-link';
   router: Router;
-  to: string;
+  to?: string;
+
+  static install() {
+    customElements.define(this.tagName, this);
+  }
 
   constructor() {
     super();
-    this.to = '';
     this.router = Router.instance;
     this.onClick = this.onClick.bind(this);
+    this.onChange = this.onChange.bind(this);
   }
 
   set exact(v: boolean) {
@@ -39,21 +41,37 @@ export default class RouterLinkElement extends HTMLElement {
     return this.hasAttribute('disabled');
   }
 
+  attributesChangedCallback(attr: string, oldValue: string, newValue: string) {
+    if (attr === 'disabled') {
+      const hasValue = newValue != null;
+      if (hasValue) {
+        this.active = false;
+        this.router.off('render', this.onChange);
+      } else {
+        this.router.on('render', this.onChange);
+        this.onChange();
+      }
+    }
+  }
+
   connectedCallback() {
-    this.addEventListener('click', this.onClick);
     let link = this.querySelector('a');
     if (link != null) {
-      this.to = link.href;
+      this.to = link.pathname;
+    } else if (this.to != null) {
+      this.setAttribute('to', this.to);
     } else {
       this.to = this.getAttribute('to') || '';
     }
 
-    this.router.on('navigation', this.onChange);
+    this.addEventListener('click', this.onClick);
+    this.router.on('render', this.onChange);
+    this.onChange();
   }
 
   disconnectedCallback() {
     this.removeEventListener('click', this.onClick);
-    this.router.off('navigation', this.onChange);
+    this.router.off('render', this.onChange);
   }
 
   toggleAttribute(name: string, predicate: boolean) {
@@ -65,7 +83,7 @@ export default class RouterLinkElement extends HTMLElement {
   }
 
   onClick(event: MouseEvent) {
-    // Don't handle clicks with modifiers
+    // Ignore clicks with modifiers
     if (
       event.metaKey ||
       event.altKey ||
@@ -75,11 +93,12 @@ export default class RouterLinkElement extends HTMLElement {
       return;
     }
 
+    // Ignore prevented clicks
     if (event.defaultPrevented) {
       return;
     }
 
-    // Don't handle right click
+    // Ignore right mouse button clicks
     if (
       event.button !== undefined &&
       event.button !== 0
@@ -111,3 +130,5 @@ export default class RouterLinkElement extends HTMLElement {
     }
   }
 }
+
+export default RouterLink;

@@ -1,6 +1,4 @@
-import { ProfilingMixin } from './profiling-mixin.js';
-
-export default class Users extends ProfilingMixin(HTMLElement) {
+export default class Dashboard extends HTMLElement {
   connectedCallback() {
     super.connectedCallback();
     this.attachShadow({ mode: 'open' });
@@ -11,10 +9,12 @@ export default class Users extends ProfilingMixin(HTMLElement) {
         padding: 24px;
       }
       </style>
-      <h1>Users</h1>
-      <slot></slot>
+      <h1>Dashboard</h1>
+      <slot>
+        Nothing to see here.
+      </slot>
     `;
   }
 }
 
-customElements.define('users-view', Users);
+customElements.define('dashboard-view', Dashboard);

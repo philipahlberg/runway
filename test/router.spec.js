@@ -57,9 +57,10 @@ describe('Router', () => {
       const router = new Router([
         { path: '/', component: SimpleComponent }
       ]);
-  
+
       const outlet = div();
       await router.connect(outlet);
+      await router.push('/');
       expect(outlet.firstChild).to.exist;
       router.disconnect();
       expect(outlet.firstChild).to.be.null;
@@ -126,6 +127,7 @@ describe('Router', () => {
   
       const outlet = div();
       await router.connect(outlet);
+      await router.push('/');
   
       expect(outlet.firstChild).to.be.instanceof(SimpleComponent);
     });

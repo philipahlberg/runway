@@ -17,11 +17,6 @@ export class Path {
   pattern: RegExp;
   keys: string[];
 
-  /**
-   * 
-   * @param input The path to compile
-   * @param exact Whether or not the pattern should match anything after the path
-   */
   constructor(path: string = '', exact: boolean = false) {
     this.path = path;
     this.exact = exact;
@@ -34,7 +29,9 @@ export class Path {
     // convert :param to a catch-all group
     // and save the keys
     while ((match = PARAMETER_PATTERN.exec(temporary)) != null) {
+      // match[0] is the entire declaration, e. g. ':param'
       temporary = temporary.replace(match[0], CATCH_ALL);
+      // match[1] is the name of the parameter, e. g. 'param'
       keys.push(match[1]);
     }
 
@@ -78,9 +75,6 @@ export class Path {
   /**
    * Transfer matched parameters in the given url to
    * the target path, filling in named parameters in if they exist.
-   * @param {String} from a matched url
-   * @param {String} to a path
-   * @return {String} The target path with parameters filled in
    */
   transfer(from: string, to: string): string {
     const values = (this.pattern.exec(from) || []).slice(1);
@@ -95,8 +89,7 @@ export class Path {
   }
 }
 
-export type Dictionary = { [key: string]: string };
-export type Tuple<T> = [T, T];
+export default Path;
 
 export class Parameters {
   path: string;
@@ -143,5 +136,3 @@ export class Parameters {
     }
   }
 }
-
-export default Path;

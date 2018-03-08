@@ -1,6 +1,3 @@
-export type Dictionary = { [key: string]: string };
-export type Tuple<T> = [T, T];
-
 export class Query extends Map<string, string> {
   static from(object: Dictionary): Query {
     return new Query(Object.entries(object));
@@ -28,3 +25,5 @@ export class Query extends Map<string, string> {
     return string.substring(1);
   }
 }
+
+export default Query;

@@ -1,9 +1,36 @@
-export function login() {
-  loggedIn = true;
+const users = [{
+  name: 'admin',
+  password: 'secret',
+  admin: true,
+  signedIn: false
+}];
+
+export let user = {};
+
+export function signin(name, password) {
+  user = users
+    .find(user => 
+      user.name === name &&
+      user.password === password
+    );
+
+  if (user) {
+    user.signedIn = true;
+    return true;
+  } else {
+    return false;
+  }
 }
 
-export function logout() {
-  loggedIn = false;
+export function signout() {
+  user.signedIn = false;
 }
 
-export let loggedIn = false;
+export function signup(name, password) {
+  users.push({
+    name,
+    password,
+    admin: false,
+    signedIn: false
+  });
+}

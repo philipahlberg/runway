@@ -1,10 +1,11 @@
-import { Path, Parameters } from './path';
-import { Query } from './query';
+import Path, { Parameters } from './path';
+import Query from './query';
 import {
   normalize,
   clone,
   freeze,
   always,
+  empty,
   isFunction
 } from './utils';
 
@@ -15,6 +16,7 @@ export interface Module {
 export type Component = AsyncComponent | HTMLElement | string;
 export type AsyncComponent = () => Promise<HTMLElement | Module>;
 export type Guard = () => boolean;
+export type Properties = (snapshot: Snapshot) => Dictionary;
 
 export interface Record {
   path: string;
@@ -23,8 +25,7 @@ export interface Record {
   redirect?: string;
   slot?: string;
   guard?: Guard;
-  meta?: { [key: string]: any };
-  properties?: { [key: string]: any };
+  properties?: Properties;
   children?: Record[];
 }
 
@@ -36,16 +37,15 @@ export interface Snapshot {
 }
 
 export class Route extends Path {
+  static cache = new Map();
   path: string;
-  component: Component;
   exact: boolean;
+  component: Component;
   children: Route[];
-  guard: Guard;
-  meta: any;
-  properties: any;
   redirect?: string;
   slot?: string;
-  private resolved?: HTMLElement;
+  guard: Guard;
+  properties: Properties;
 
   static async import(identifier: Component): Promise<HTMLElement> {
     if (typeof identifier === 'string') {
@@ -58,16 +58,16 @@ export class Route extends Path {
       // If it's a function, call it
       let called = (identifier as AsyncComponent)();
       // If it's a promise, resolve it
-      let resolved: any = await Promise.resolve(called);
+      let resolved = await Promise.resolve(called);
 
       // If the promise resolved directly to an element,
       // return it
       // otherwise, assume that it resolved to a module
       // with the default export being the element
-      if (resolved.default) {
-        return resolved.default;
+      if ((resolved as Module).default) {
+        return (resolved as Module).default;
       } else {
-        return resolved;
+        return resolved as HTMLElement;
       }
     } else {
       // If it's not a string or a promise,
@@ -84,11 +84,14 @@ export class Route extends Path {
       redirect,
       slot,
       guard,
-      meta,
       properties,
       children
     } = record;
 
+    // Path should be exact if the route
+    // does not have any children,
+    // but only if the record does not
+    // declare anything
     if (exact == null) {
       exact = (
         children == null ||
@@ -103,18 +106,20 @@ export class Route extends Path {
     this.component = component;
     this.slot = slot;
     this.guard = guard || always;
-    this.meta = freeze(meta || {});
-    this.properties = freeze(properties || {});
+    this.properties = freeze(properties || empty);
     this.children = (children || []).map(child =>
       createChildRoute(clone(child), this)
     );
   }
 
   async import(): Promise<HTMLElement> {
-    if (this.resolved == null) {
-      this.resolved = await Route.import(this.component);
+    if (Route.cache.has(this.component)) {
+      return Route.cache.get(this.component);
+    } else {
+      let ctor = await Route.import(this.component);
+      Route.cache.set(this.component, ctor);
+      return ctor;
     }
-    return this.resolved;
   }
 
   snapshot(path: string): Snapshot {
@@ -129,11 +134,14 @@ export class Route extends Path {
 
 function createChildRoute(record: Record, parent: Route): Route {
   if (record.path === '') {
+    // If the path is empty, simply copy the parent path
     record.path = parent.path;
   } else {
+    // Otherwise, prepend the parent path
     record.path = normalize(parent.path + '/' + record.path);
   }
 
+  // Same idea with redirect
   if (record.redirect != null) {
     if (record.redirect === '') {
       record.redirect = parent.path;
@@ -144,3 +152,5 @@ function createChildRoute(record: Record, parent: Route): Route {
 
   return new Route(record);
 }
+
+export default Route;

@@ -13,15 +13,6 @@ describe('Query', () => {
     });
   });
 
-  describe('.of', () => {
-    it('constructs a query out of tuples', () => {
-      const query = Query.of(['a', 1], ['b', 2]);
-
-      expect(query.get('a')).to.equal(1);
-      expect(query.get('b')).to.equal(2);
-    });
-  });
-
   describe('.parse', () => {
     it('constructs a query from a string', () => {
       const query = Query.parse('?a=1&b=2');

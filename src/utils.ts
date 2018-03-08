@@ -47,8 +47,12 @@ export function clone<T>(object: T): T {
   return Object.assign({}, object);
 }
 
-export function freeze(object: any) {
+export function freeze<T>(object: T): T {
   return Object.freeze(object);
+}
+
+export function empty() {
+  return Object.create(null);
 }
 
 export function always(): true {

@@ -73,6 +73,7 @@ describe('Route', () => {
     //   });
 
     //   const Component = await route.import();
+    //   expect(Component).to.exist;
     //   expect(Component.prototype).to.equal(HTMLElement);
     // });
   });

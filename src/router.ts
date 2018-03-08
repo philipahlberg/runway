@@ -1,14 +1,9 @@
 import EventEmitter from './event-emitter';
-import { Record, Route } from './route';
+import Route, { Record } from './route';
 import { EMPTY } from './utils';
 
 export interface SearchResult {
   matched: Route[];
-  /** 
-   * If the search was redirected,
-   * the resulting path is different
-   * from the input path
-  */
   path: string;
 }
 
@@ -17,7 +12,7 @@ export interface NavigationOptions {
   title: string;
 }
 
-export default class Router extends EventEmitter {
+export class Router extends EventEmitter {
   static instance: Router;
   elements: HTMLElement[];
   matched: Route[];
@@ -190,10 +185,10 @@ export default class Router extends EventEmitter {
       const route = matched[i];
       // TODO: fix type
       const Component: any = components[i];
-      const snapshot = route.snapshot(url);
-      const parameters = snapshot.parameters;
       const options = Component.properties;
       if (options != undefined) {
+        const snapshot = route.snapshot(url);
+        const parameters = snapshot.parameters;
         // Resolve parameters from paths
         for (const [key, value] of parameters) {
           if (options.hasOwnProperty(key)) {
@@ -202,15 +197,14 @@ export default class Router extends EventEmitter {
         }
 
         // Resolve additional properties from route
-        for (const key in route.properties) {
+        const properties = route.properties(snapshot);
+        for (const key in properties) {
           if (options.hasOwnProperty(key)) {
-            const value = route.properties[key];
+            const value = properties[key];
             element[key] = value;
           }
         }
       }
-
-      element.route = snapshot;
 
       if (route.slot) {
         element.setAttribute('slot', route.slot);
@@ -240,3 +234,5 @@ export default class Router extends EventEmitter {
     }
   }
 }
+
+export default Router;

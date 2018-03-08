@@ -1,6 +1,4 @@
-import { ProfilingMixin } from './profiling-mixin.js';
-
-export default class Admin extends ProfilingMixin(HTMLElement) {
+export default class Docs extends HTMLElement {
   connectedCallback() {
     super.connectedCallback();
     this.attachShadow({ mode: 'open' });
@@ -11,9 +9,12 @@ export default class Admin extends ProfilingMixin(HTMLElement) {
         padding: 24px;
       }
       </style>
-      <h1>Admin</h1>
+      <h1>Docs</h1>
+      <slot>
+        Nothing to see here.
+      </slot>
     `;
   }
 }
 
-customElements.define('admin-view', Admin);
+customElements.define('docs-view', Docs);
