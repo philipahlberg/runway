@@ -1,6 +1,6 @@
 import EventEmitter from './event-emitter';
 import Route, { Record } from './route';
-import { EMPTY } from './utils';
+import { EMPTY, decode, pathname } from './utils';
 
 export interface SearchResult {
   matched: Route[];
@@ -17,7 +17,6 @@ export class Router extends EventEmitter {
   elements: HTMLElement[];
   matched: Route[];
   routes: Route[];
-  middleware: Function[];
   isConnected: boolean;
   target?: HTMLElement;
 
@@ -26,17 +25,16 @@ export class Router extends EventEmitter {
     this.isConnected = false;
     this.elements = [];
     this.matched = [];
-    this.middleware = [];
     this.routes = records.map(record => new Route(record));
     this.onPopstate = this.onPopstate.bind(this);
     Router.instance = this;
   }
 
-  async connect(target: HTMLElement) {
+  async connect(target: HTMLElement): Promise<void> {
     this.isConnected = true;
     this.target = target;
     window.addEventListener('popstate', this.onPopstate);
-    const currentPath = decodeURIComponent(location.pathname);
+    const currentPath = decode(location.pathname);
     const { matched, path } = this.match(currentPath);
 
     history.replaceState(history.state, document.title, path);
@@ -44,7 +42,7 @@ export class Router extends EventEmitter {
     this.emit('connect');
   }
 
-  disconnect() {
+  disconnect(): void {
     this.isConnected = false;
     window.removeEventListener('popstate', this.onPopstate);
     this.teardown();
@@ -53,8 +51,8 @@ export class Router extends EventEmitter {
     this.emit('disconnect');
   }
 
-  onPopstate() {
-    const to = decodeURIComponent(location.pathname);
+  onPopstate(): void {
+    const to = decode(location.pathname);
     const { matched, path } = this.match(to);
     if (to !== path) {
       history.replaceState(history.state, document.title, path);
@@ -63,8 +61,8 @@ export class Router extends EventEmitter {
     this.render(matched);
   }
 
-  push(to: string, options: NavigationOptions = EMPTY) {
-    to = decodeURIComponent(to);
+  push(to: string, options: NavigationOptions = EMPTY): Promise<void> {
+    to = decode(to);
     const { matched, path } = this.match(to);
     const { data, title } = options;
     history.pushState(data, title, path);
@@ -72,8 +70,8 @@ export class Router extends EventEmitter {
     return this.render(matched);
   }
 
-  replace(to: string, options: NavigationOptions = EMPTY) {
-    to = decodeURIComponent(to);
+  replace(to: string, options: NavigationOptions = EMPTY): Promise<void> {
+    to = decode(to);
     const { matched, path } = this.match(to);
     const { data, title } = options;
     history.replaceState(data, title, path);
@@ -81,7 +79,7 @@ export class Router extends EventEmitter {
     return this.render(matched);
   }
 
-  pop(entries: number = -1) {
+  go(entries: number) {
     // triggers onPopstate(), so no need to render
     // in this method call
     history.go(entries);
@@ -95,7 +93,7 @@ export class Router extends EventEmitter {
       matched.push(route);
       if (route.redirect) {
         // transfer any matched parameters
-        const from = route.matched(path);
+        const from = route.matched(pathname(path));
         const to = route.redirect;
         const redirected = route.transfer(from, to);
         // and start over
@@ -178,7 +176,7 @@ export class Router extends EventEmitter {
 
     // In correct order, resolve any new properties
     // Note: this happens before the new elements are connected
-    const url = decodeURIComponent(location.pathname);
+
     for (let i = 0; i < this.elements.length; i++) {
       // TODO: fix type
       const element: any = this.elements[i];
@@ -187,7 +185,7 @@ export class Router extends EventEmitter {
       const Component: any = components[i];
       const options = Component.properties;
       if (options != undefined) {
-        const snapshot = route.snapshot(url);
+        const snapshot = route.snapshot(location);
         const parameters = snapshot.parameters;
         // Resolve parameters from paths
         for (const [key, value] of parameters) {

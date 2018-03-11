@@ -31,138 +31,38 @@ class EventEmitter {
     }
 }
 
-const MATCH_ALL = '[^/]*';
-const CATCH_ALL = '([^/]+)';
-const PARAMETER_PATTERN = /:([^\/]+)/;
-// optional trailing slash
-// only matches the slash if nothing follows
-const MATCH_TRAILING_SLASH = '(?:[\/]?(?=$))?';
-// implements '**' as a wildcard
-const WILDCARD_PATTERN = /\*\*/g;
-class Path {
-    constructor(path = '', exact = false) {
-        this.path = path;
-        this.exact = exact;
-        // replace any wildcards with
-        // their corresponding expression
-        let temporary = path.replace(WILDCARD_PATTERN, MATCH_ALL);
-        let match;
-        let keys = [];
-        // convert :param to a catch-all group
-        // and save the keys
-        while ((match = PARAMETER_PATTERN.exec(temporary)) != null) {
-            // match[0] is the entire declaration, e. g. ':param'
-            temporary = temporary.replace(match[0], CATCH_ALL);
-            // match[1] is the name of the parameter, e. g. 'param'
-            keys.push(match[1]);
-        }
-        if (!temporary.endsWith('/')) {
-            temporary += MATCH_TRAILING_SLASH;
-        }
-        temporary = exact ? `^${temporary}$` : `^${temporary}`;
-        const pattern = new RegExp(temporary, 'i');
-        this.keys = keys;
-        this.pattern = pattern;
-    }
-    /**
-     * Convenience function that mirrors RegExp.test
-     */
-    matches(path) {
-        return this.pattern.test(path);
-    }
-    /**
-     * Find the matched part of the given path.
-     */
-    matched(path) {
-        let matched = this.pattern.exec(path);
-        return matched && matched[0] || '';
-    }
-    /**
-     * Parse a path string for parameter values.
-     */
-    parse(path) {
-        return new Parameters(path, this.pattern, this.keys);
-    }
-    /**
-     * Transfer matched parameters in the given url to
-     * the target path, filling in named parameters in if they exist.
-     */
-    transfer(from, to) {
-        const values = (this.pattern.exec(from) || []).slice(1);
-        let transferred = to;
-        let i = values.length;
-        while (i--) {
-            transferred = transferred
-                .replace(':' + this.keys[i], values[i]);
-        }
-        return transferred;
-    }
-}
-class Parameters {
-    constructor(path, pattern, keys) {
-        this.path = path;
-        this.keys = keys;
-        this.values = (pattern.exec(path) || []).slice(1);
-    }
-    get(key) {
-        return this.values[this.keys.indexOf(key)];
-    }
-    set(key, value) {
-        return this.path.replace(this.get(key), value);
-    }
-    has(key) {
-        return this.get(key) !== undefined;
-    }
-    entries() {
-        let entries = [];
-        for (let i = 0; i < this.keys.length; i++) {
-            entries.push([this.keys[i], this.values[i]]);
-        }
-        return entries;
-    }
-    all() {
-        return this.keys.reduce((object, key, i) => {
-            object[key] = this.values[i];
-            return object;
-        }, {});
-    }
-    *[Symbol.iterator]() {
-        const length = this.keys.length;
-        for (let i = 0; i < length; i++) {
-            yield [this.keys[i], this.values[i]];
-        }
-    }
-}
-
-class Query extends Map {
-    static from(object) {
-        return new Query(Object.entries(object));
-    }
-    static parse(string) {
-        if (string.startsWith('?')) {
-            string = string.substring(1);
-        }
-        let entries = [];
-        if (string !== '') {
-            entries = string.split('&')
-                .map((substring) => substring.split('='));
-        }
-        return new Query(entries);
-    }
-    toString() {
-        let string = '';
-        for (const [key, value] of this) {
-            string += `&${key}=${value}`;
-        }
-        return string.substring(1);
-    }
-}
-
 /**
  * Append a leading slash, and remove all excess slashes.
  */
 function normalize(path) {
     return ('/' + path).replace(/[\/]+/g, '/');
+}
+function decode(str) {
+    return decodeURIComponent(str);
+}
+function split(path) {
+    let temp = path.split('#');
+    const hash = temp[1] || '';
+    temp = (temp[0] || '').split('?');
+    const search = temp[1] || '';
+    const pathname = temp[0] || '';
+    return {
+        pathname,
+        search,
+        hash
+    };
+}
+function pathname(path) {
+    return (path.split('#')[0] || '').split('?')[0];
+}
+function search(path) {
+    path = (path.split('#')[0] || '');
+    if (/\?/.test(path)) {
+        return path.split('?')[1] || '';
+    }
+    else {
+        return path;
+    }
 }
 /**
  * Determines if the given object is a callable function.
@@ -208,7 +108,125 @@ function empty() {
 function always() {
     return true;
 }
+function zip(a, b) {
+    return a.map((v, i) => [v, b[i]]);
+}
+function dict(pairs) {
+    let index = -1;
+    const length = pairs.length;
+    const result = {};
+    while (++index < length) {
+        const pair = pairs[index];
+        result[pair[0]] = pair[1];
+    }
+    return result;
+}
 const EMPTY = freeze(Object.create(null));
+
+const MATCH_ALL = '[^/]*';
+const CATCH_ALL = '([^/]+)';
+const PARAMETER_PATTERN = /:([^\/]+)/;
+// optional trailing slash
+// only matches the slash if nothing follows
+const MATCH_TRAILING_SLASH = '(?:[\/]?(?=$))?';
+// implements '**' as a wildcard
+const WILDCARD_PATTERN = /\*\*/g;
+class Path {
+    constructor(path = '', exact = false) {
+        path = pathname(path);
+        this.path = path;
+        this.exact = exact;
+        // replace any wildcards with
+        // their corresponding expression
+        let temporary = path.replace(WILDCARD_PATTERN, MATCH_ALL);
+        let match;
+        let keys = [];
+        // convert :param to a catch-all group
+        // and save the keys
+        while ((match = PARAMETER_PATTERN.exec(temporary)) != null) {
+            // match[0] is the entire declaration, e. g. ':param'
+            temporary = temporary.replace(match[0], CATCH_ALL);
+            // match[1] is the name of the parameter, e. g. 'param'
+            keys.push(match[1]);
+        }
+        if (!temporary.endsWith('/')) {
+            temporary += MATCH_TRAILING_SLASH;
+        }
+        temporary = exact ? `^${temporary}$` : `^${temporary}`;
+        const pattern = new RegExp(temporary, 'i');
+        this.keys = keys;
+        this.pattern = pattern;
+    }
+    /**
+     * Convenience function that mirrors RegExp.test
+     */
+    matches(path) {
+        return this.pattern.test(pathname(path));
+    }
+    /**
+     * Find the matched part of the given path.
+     */
+    matched(path) {
+        let matched = this.pattern.exec(pathname(path));
+        return matched && matched[0] || '';
+    }
+    /**
+     * Parse a path string for parameter values.
+     */
+    parse(path) {
+        return new Parameters(path, this.pattern, this.keys);
+    }
+    /**
+     * Transfer matched parameters in the given url to
+     * the target path, filling in named parameters in if they exist.
+     */
+    transfer(from, to) {
+        const values = (this.pattern.exec(from) || []).slice(1);
+        let transferred = to;
+        let i = values.length;
+        while (i--) {
+            transferred = transferred
+                .replace(':' + this.keys[i], values[i]);
+        }
+        return transferred;
+    }
+}
+class Parameters extends Map {
+    constructor(path, pattern, keys) {
+        path = pathname(path);
+        const values = (pattern.exec(path) || []).slice(1);
+        super(zip(keys, values));
+        this.path = path;
+    }
+    all() {
+        return dict(Array.from(this.entries()));
+    }
+}
+
+class Query extends Map {
+    static from(object) {
+        return new Query(Object.entries(object));
+    }
+    static parse(string) {
+        const queryString = search(string);
+        let entries = [];
+        if (queryString !== '') {
+            entries = queryString.split('&')
+                .map((substring) => substring.split('='));
+        }
+        return new Query(entries);
+    }
+    all() {
+        return dict(Array.from(this.entries()));
+    }
+    toString() {
+        let string = '';
+        for (const [key, value] of this) {
+            string += `&${key}=${value}`;
+        }
+        return string.substring(1);
+    }
+}
 
 class Route extends Path {
     constructor(record) {
@@ -270,12 +288,19 @@ class Route extends Path {
             return ctor;
         }
     }
-    snapshot(path) {
+    snapshot(identifier) {
+        let uri;
+        if (typeof identifier === 'string') {
+            uri = split(identifier);
+        }
+        else {
+            uri = identifier;
+        }
         return freeze({
-            parameters: this.parse(path),
-            query: Query.parse(location.search),
-            matched: this.matched(path),
-            hash: location.hash.substring(1)
+            parameters: this.parse(decode(uri.pathname)),
+            query: Query.parse(decode(uri.search)),
+            matched: this.matched(decode(uri.pathname)),
+            hash: uri.hash
         });
     }
 }
@@ -307,7 +332,6 @@ class Router extends EventEmitter {
         this.isConnected = false;
         this.elements = [];
         this.matched = [];
-        this.middleware = [];
         this.routes = records.map(record => new Route(record));
         this.onPopstate = this.onPopstate.bind(this);
         Router.instance = this;
@@ -316,7 +340,7 @@ class Router extends EventEmitter {
         this.isConnected = true;
         this.target = target;
         window.addEventListener('popstate', this.onPopstate);
-        const currentPath = decodeURIComponent(location.pathname);
+        const currentPath = decode(location.pathname);
         const { matched, path } = this.match(currentPath);
         history.replaceState(history.state, document.title, path);
         await this.render(matched);
@@ -331,7 +355,7 @@ class Router extends EventEmitter {
         this.emit('disconnect');
     }
     onPopstate() {
-        const to = decodeURIComponent(location.pathname);
+        const to = decode(location.pathname);
         const { matched, path } = this.match(to);
         if (to !== path) {
             history.replaceState(history.state, document.title, path);
@@ -340,7 +364,7 @@ class Router extends EventEmitter {
         this.render(matched);
     }
     push(to, options = EMPTY) {
-        to = decodeURIComponent(to);
+        to = decode(to);
         const { matched, path } = this.match(to);
         const { data, title } = options;
         history.pushState(data, title, path);
@@ -348,14 +372,14 @@ class Router extends EventEmitter {
         return this.render(matched);
     }
     replace(to, options = EMPTY) {
-        to = decodeURIComponent(to);
+        to = decode(to);
         const { matched, path } = this.match(to);
         const { data, title } = options;
         history.replaceState(data, title, path);
         this.emit('replace');
         return this.render(matched);
     }
-    pop(entries = -1) {
+    go(entries) {
         // triggers onPopstate(), so no need to render
         // in this method call
         history.go(entries);
@@ -367,7 +391,7 @@ class Router extends EventEmitter {
             matched.push(route);
             if (route.redirect) {
                 // transfer any matched parameters
-                const from = route.matched(path);
+                const from = route.matched(pathname(path));
                 const to = route.redirect;
                 const redirected = route.transfer(from, to);
                 // and start over
@@ -439,7 +463,6 @@ class Router extends EventEmitter {
         this.elements = this.elements.concat(additions);
         // In correct order, resolve any new properties
         // Note: this happens before the new elements are connected
-        const url = decodeURIComponent(location.pathname);
         for (let i = 0; i < this.elements.length; i++) {
             // TODO: fix type
             const element = this.elements[i];
@@ -448,7 +471,7 @@ class Router extends EventEmitter {
             const Component = components[i];
             const options = Component.properties;
             if (options != undefined) {
-                const snapshot = route.snapshot(url);
+                const snapshot = route.snapshot(location);
                 const parameters = snapshot.parameters;
                 // Resolve parameters from paths
                 for (const [key, value] of parameters) {
@@ -492,22 +515,31 @@ class Router extends EventEmitter {
     }
 }
 
-function InstallMixin(Base) {
-    return class extends Base {
-        static install() {
-            customElements.define(this.tagName, this);
-        }
-    };
-}
-class RouterLink extends InstallMixin(HTMLElement) {
+class RouterLink extends HTMLElement {
     constructor() {
         super();
         this.router = Router.instance;
         this.onClick = this.onClick.bind(this);
         this.onChange = this.onChange.bind(this);
     }
+    static install() {
+        customElements.define(this.tagName, this);
+    }
+    get anchor() {
+        return this.querySelector('a');
+    }
+    set to(v) {
+        this.anchor.href = v;
+        const path = decodeURIComponent(location.pathname);
+        this.active = this.match(path);
+    }
+    get to() {
+        return decodeURIComponent(this.anchor.pathname);
+    }
     set exact(v) {
         this.toggleAttribute('exact', v);
+        const path = decodeURIComponent(location.pathname);
+        this.active = this.match(path);
     }
     get exact() {
         return this.hasAttribute('exact');
@@ -538,16 +570,6 @@ class RouterLink extends InstallMixin(HTMLElement) {
         }
     }
     connectedCallback() {
-        let link = this.querySelector('a');
-        if (link != null) {
-            this.to = link.pathname;
-        }
-        else if (this.to != null) {
-            this.setAttribute('to', this.to);
-        }
-        else {
-            this.to = this.getAttribute('to') || '';
-        }
         this.addEventListener('click', this.onClick);
         this.router.on('render', this.onChange);
         this.onChange();
@@ -562,6 +584,17 @@ class RouterLink extends InstallMixin(HTMLElement) {
         }
         else {
             this.removeAttribute(name);
+        }
+    }
+    match(path) {
+        const to = this.to;
+        if (to.startsWith('/')) {
+            return this.exact
+                ? path === to
+                : path.startsWith(to);
+        }
+        else {
+            return path.endsWith(to);
         }
     }
     onClick(event) {
@@ -582,27 +615,17 @@ class RouterLink extends InstallMixin(HTMLElement) {
             return;
         }
         event.preventDefault();
-        if (this.disabled || !this.to) {
+        const to = this.to;
+        if (this.disabled || !to) {
             return;
         }
         else {
-            this.router.push(this.to);
+            this.router.push(to);
         }
     }
     onChange() {
-        if (!this.to) {
-            this.active = false;
-            return;
-        }
-        const url = decodeURIComponent(location.pathname);
-        if (this.to.startsWith('/')) {
-            this.active = this.exact
-                ? url === this.to
-                : url.startsWith(this.to);
-        }
-        else {
-            this.active = url.endsWith(this.to);
-        }
+        const path = decodeURIComponent(location.pathname);
+        this.active = this.match(path);
     }
 }
 RouterLink.observedAttributes = ['disabled'];

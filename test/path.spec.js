@@ -13,6 +13,16 @@ describe('Path', () => {
       expect(path.matches('/a/b')).to.be.false;
       expect(path.matches('/ab')).to.be.false;
     });
+
+    it('ignores query', () => {
+      const path = new Path('/a');
+      expect(path.matches('/a?q=123')).to.be.true;
+    });
+
+    it('ignores hash', () => {
+      const path = new Path('/a');
+      expect(path.matches('/a#hash')).to.be.true;
+    });
   });
 
   describe('#matched', () => {
@@ -22,6 +32,16 @@ describe('Path', () => {
       const b = new Path('/abc');
       expect(b.matched('/abc/xyz')).to.equal('/abc');
     });
+
+    it('ignores query', () => {
+      const path = new Path('/abc');
+      expect(path.matched('/abc?q=123')).to.equal('/abc');
+    });
+
+    it('ignores hash', () => {
+      const path = new Path('/abc');
+      expect(path.matched('/abc#hash')).to.equal('/abc');
+    });
   });
 
   describe('#parse', () => {
@@ -29,34 +49,15 @@ describe('Path', () => {
       const path = new Path('/:param');
       const params = path.parse('/123');
       expect(params.get('param')).to.equal('123');
+      expect(params.all()).to.deep.equal({ param: '123' });
     });
   
     it('can parse multiple named parameters', () => {
       const path = new Path('/:a/:b');
       const params = path.parse('/1/2');
-      expect(params.values).to.deep.equal(['1', '2']);
-      expect(params.keys).to.deep.equal(['a', 'b']);
+      expect(params.get('a')).to.equal('1');
+      expect(params.get('b')).to.equal('2');
       expect(params.all()).to.deep.equal({ a: '1', b: '2' });
-      expect(params.entries()).to.deep.equal([['a', '1'], ['b', '2']]);
-    });
-  
-    it('returns an iterable', () => {
-      const path = new Path('/:a/:b');
-      const params = path.parse('/1/2');
-      let keys = [];
-      let values = [];
-
-      for (const [key, value] of params) {
-        keys.push(key);
-        values.push(value);
-      }
-  
-      expect(keys.length).to.equal(2);
-      expect(values.length).to.equal(2);
-      expect(keys).to.deep.equal(['a', 'b']);
-      expect(values).to.deep.equal(['1', '2']);
     });
   });
-
-
 });

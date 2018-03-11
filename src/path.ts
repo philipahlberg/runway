@@ -1,3 +1,5 @@
+import { pathname, zip, dict } from './utils';
+
 const MATCH_ALL = '[^/]*';
 
 const CATCH_ALL = '([^/]+)';
@@ -18,6 +20,7 @@ export class Path {
   keys: string[];
 
   constructor(path: string = '', exact: boolean = false) {
+    path = pathname(path);
     this.path = path;
     this.exact = exact;
     // replace any wildcards with
@@ -50,14 +53,14 @@ export class Path {
    * Convenience function that mirrors RegExp.test
    */
   matches(path: string): boolean {
-    return this.pattern.test(path);
+    return this.pattern.test(pathname(path));
   }
 
   /**
    * Find the matched part of the given path.
    */
   matched(path: string): string {
-    let matched = this.pattern.exec(path);
+    let matched = this.pattern.exec(pathname(path));
     return matched && matched[0] || '';
   }
 
@@ -91,48 +94,17 @@ export class Path {
 
 export default Path;
 
-export class Parameters {
+export class Parameters extends Map<string, string> {
   path: string;
-  keys: string[];
-  values: string[];
 
   constructor(path: string, pattern: RegExp, keys: string[]) {
+    path = pathname(path);
+    const values = (pattern.exec(path) || []).slice(1);
+    super(zip(keys, values));
     this.path = path;
-    this.keys = keys;
-    this.values = (pattern.exec(path) || []).slice(1);
   }
 
-  get(key: string): string {
-    return this.values[this.keys.indexOf(key)];
-  }
-
-  set(key: string, value: string): string {
-    return this.path.replace(this.get(key), value);
-  }
-
-  has(key: string): boolean {
-    return this.get(key) !== undefined;
-  }
-
-  entries(): Tuple<string>[] {
-    let entries: Tuple<string>[] = [];
-    for (let i = 0; i < this.keys.length; i++) {
-      entries.push([this.keys[i], this.values[i]]);
-    }
-    return entries;
-  }
-
-  all(): Dictionary {
-    return this.keys.reduce((object: Dictionary, key: string, i) => {
-      object[key] = this.values[i];
-      return object;
-    }, {});
-  }
-
-  *[Symbol.iterator]() {
-    const length = this.keys.length;
-    for (let i = 0; i < length; i++) {
-      yield [this.keys[i], this.values[i]];
-    }
+  all(): Dictionary<string> {
+    return dict(Array.from(this.entries()));
   }
 }

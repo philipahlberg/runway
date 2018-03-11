@@ -10,9 +10,6 @@ export default class Docs extends HTMLElement {
       }
       </style>
       <h1>Docs</h1>
-      <slot>
-        Nothing to see here.
-      </slot>
     `;
   }
 }

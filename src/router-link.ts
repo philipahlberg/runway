@@ -4,7 +4,6 @@ export class RouterLink extends HTMLElement {
   static observedAttributes = ['disabled'];
   static tagName = 'router-link';
   router: Router;
-  to?: string;
 
   static install() {
     customElements.define(this.tagName, this);
@@ -17,8 +16,24 @@ export class RouterLink extends HTMLElement {
     this.onChange = this.onChange.bind(this);
   }
 
+  get anchor() {
+    return this.querySelector('a');
+  }
+
+  set to(v: string) {
+    this.anchor!.href = v;
+    const path = decodeURIComponent(location.pathname);
+    this.active = this.match(path);
+  }
+
+  get to(): string {
+    return decodeURIComponent(this.anchor!.pathname);
+  }
+
   set exact(v: boolean) {
     this.toggleAttribute('exact', v);
+    const path = decodeURIComponent(location.pathname);
+    this.active = this.match(path);
   }
 
   get exact(): boolean {
@@ -55,15 +70,6 @@ export class RouterLink extends HTMLElement {
   }
 
   connectedCallback() {
-    let link = this.querySelector('a');
-    if (link != null) {
-      this.to = link.pathname;
-    } else if (this.to != null) {
-      this.setAttribute('to', this.to);
-    } else {
-      this.to = this.getAttribute('to') || '';
-    }
-
     this.addEventListener('click', this.onClick);
     this.router.on('render', this.onChange);
     this.onChange();
@@ -79,6 +85,17 @@ export class RouterLink extends HTMLElement {
       this.setAttribute(name, '');
     } else {
       this.removeAttribute(name);
+    }
+  }
+
+  match(path: string): boolean {
+    const to = this.to;
+    if (to.startsWith('/')) {
+      return this.exact
+        ? path === to
+        : path.startsWith(to);
+    } else {
+      return path.endsWith(to);
     }
   }
 
@@ -107,27 +124,17 @@ export class RouterLink extends HTMLElement {
     }
 
     event.preventDefault();
-    if (this.disabled || !this.to) {
+    const to = this.to;
+    if (this.disabled || !to) {
       return;
     } else {
-      this.router.push(this.to);
+      this.router.push(to);
     }
   }
 
   onChange() {
-    if (!this.to) {
-      this.active = false;
-      return;
-    }
-
-    const url = decodeURIComponent(location.pathname);
-    if (this.to.startsWith('/')) {
-      this.active = this.exact
-        ? url === this.to
-        : url.startsWith(this.to);
-    } else {
-      this.active = url.endsWith(this.to);
-    }
+    const path = decodeURIComponent(location.pathname);
+    this.active = this.match(path);
   }
 }
 

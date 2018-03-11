@@ -11,5 +11,5 @@ interface Constructor<T> {
   new (...args: any[]): T;
 }
 
-type Dictionary = { [key: string]: string };
+type Dictionary<T> = { [key: string]: T };
 type Tuple<T> = [T, T];

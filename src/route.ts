@@ -2,6 +2,8 @@ import Path, { Parameters } from './path';
 import Query from './query';
 import {
   normalize,
+  decode,
+  split,
   clone,
   freeze,
   always,
@@ -32,8 +34,14 @@ export interface Record {
 export interface Snapshot {
   readonly parameters: Parameters;
   readonly query: Query;
-  readonly matched: string;
   readonly hash: string;
+  readonly matched: string;
+}
+
+export interface Location {
+  search: string;
+  hash: string;
+  pathname: string;
 }
 
 export class Route extends Path {
@@ -122,12 +130,19 @@ export class Route extends Path {
     }
   }
 
-  snapshot(path: string): Snapshot {
+  snapshot(identifier: string | Location): Snapshot {
+    let uri;
+    if (typeof identifier === 'string') {
+      uri = split(identifier);
+    } else {
+      uri = identifier;
+    }
+
     return freeze({
-      parameters: this.parse(path),
-      query: Query.parse(location.search),
-      matched: this.matched(path),
-      hash: location.hash.substring(1)
+      parameters: this.parse(decode(uri.pathname)),
+      query: Query.parse(decode(uri.search)),
+      matched: this.matched(decode(uri.pathname)),
+      hash: uri.hash
     });
   }
 }

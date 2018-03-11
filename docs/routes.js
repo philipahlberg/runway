@@ -1,5 +1,6 @@
 import Router from 'lib';
 import Dashboard from './dashboard.js';
+import Docs from './docs.js';
 
 const router = new Router([
   {
@@ -8,7 +9,7 @@ const router = new Router([
   },
   {
     path: '/docs',
-    component: () => import('.(docs.js')
+    component: Docs
   }
 ]);
 

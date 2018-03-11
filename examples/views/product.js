@@ -7,8 +7,23 @@ export default class Product extends HTMLElement {
     }
   }
 
-  connectedCallback() {
+  constructor() {
+    super();
     this.attachShadow({ mode: 'open' });
+  }
+
+  set product_id(value) {
+    this._id = value;
+    if (this.isConnected) {
+      this.render();
+    }
+  }
+
+  get product_id() {
+    return this._id;
+  }
+
+  connectedCallback() {
     this.shadowRoot.innerHTML = `
       <style>
       :host {
@@ -17,8 +32,15 @@ export default class Product extends HTMLElement {
       }
       </style>
       <h1>Product</h1>
-      <p>ID: ${this.product_id}</p>
+      <div id="content"></div>
     `;
+
+    this.content = this.shadowRoot.querySelector('#content');
+    this.render();
+  }
+
+  render() {
+    this.content.textContent = `ID: ${this.product_id}`;
   }
 }
 

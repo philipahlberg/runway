@@ -5,6 +5,42 @@ export function normalize(path: string): string {
   return ('/' + path).replace(/[\/]+/g, '/');
 }
 
+export function decode(str: string): string {
+  return decodeURIComponent(str);
+}
+
+type URI = { pathname: string, search: string, hash: string };
+
+export function split(path: string): URI {
+  let temp = path.split('#');
+  const hash = temp[1] || '';
+  temp = (temp[0] || '').split('?');
+  const search = temp[1] || '';
+  const pathname = temp[0] || '';
+  return {
+    pathname,
+    search,
+    hash
+  };
+}
+
+export function pathname(path: string): string {
+  return (path.split('#')[0] || '').split('?')[0];
+}
+
+export function search(path: string): string {
+  path = (path.split('#')[0] || '');
+  if (/\?/.test(path)) {
+    return path.split('?')[1] || '';
+  } else {
+    return path;
+  }
+}
+
+export function hash(path: string): string {
+  return path.split('#')[1] || '';
+}
+
 /**
  * Determines if the given object is a callable function.
  * An ES2015 class will return false, while ordinary functions,
@@ -61,6 +97,23 @@ export function always(): true {
 
 export function never(): false {
   return false;
+}
+
+export function zip(a: any[], b: any[]): any[] {
+  return a.map((v, i) => [v, b[i]]);
+}
+
+export function dict(pairs: [any, any][]): Dictionary<string> {
+  let index = -1;
+  const length = pairs.length;
+  const result: Dictionary<string> = {};
+
+  while (++index < length) {
+    const pair = pairs[index];
+    result[pair[0]] = pair[1];
+  }
+
+  return result;
 }
 
 export const EMPTY = freeze(Object.create(null));

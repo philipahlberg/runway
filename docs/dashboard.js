@@ -10,9 +10,6 @@ export default class Dashboard extends HTMLElement {
       }
       </style>
       <h1>Dashboard</h1>
-      <slot>
-        Nothing to see here.
-      </slot>
     `;
   }
 }

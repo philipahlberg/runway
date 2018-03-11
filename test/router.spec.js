@@ -16,22 +16,7 @@ describe('Router', () => {
       expect(router.routes).to.be.instanceof(Array);
     });
 
-    it('renders if a DOM target is given');
-    // it('renders if a DOM target is given', async () => {
-    //   const outlet = div();
-    //   const router = new Router([
-    //     { path: '/', component: SimpleComponent }
-    //   ], outlet);
-
-    //   expect(router.routes).to.have.lengthOf(1);
-
-    //   await Promise.resolve();
-    //   await Promise.resolve();
-
-    //   expect(router.elements).to.have.lengthOf(1);
-    // });
-
-    it('does not render if a DOM target is not given', () => {
+    it('does not render', () => {
       const router = new Router([
         { path: '/', component: SimpleComponent }
       ]);
@@ -77,7 +62,47 @@ describe('Router', () => {
 
       const { matched, path } = router.match('/a');
       expect(path).to.equal('/a');
-      expect(matched).to.be.an('array').that.has.lengthOf(1);
+      expect(matched).to.be.an('array').that.has.length(1);
+
+      const route = matched[0];
+      expect(route).to.have.property('path', '/a');
+    });
+
+    it('ignores query', () => {
+      const router = new Router([
+        { path: '/a' },
+        { path: '/abc' }
+      ]);
+
+      const { matched, path } = router.match('/a?q=123');
+      expect(path).to.equal('/a?q=123');
+      expect(matched).to.be.an('array').that.has.length(1);
+
+      const route = matched[0];
+      expect(route).to.have.property('path', '/a');
+    });
+
+    it('ignores hash', () => {
+      const router = new Router([
+        { path: '/a' }
+      ]);
+
+      const { matched, path } = router.match('/a#hash');
+      expect(path).to.equal('/a#hash');
+      expect(matched).to.be.an('array').that.has.length(1);
+
+      const route = matched[0];
+      expect(route).to.have.property('path', '/a');
+    });
+
+    it('ignores both query and hash', () => {
+      const router = new Router([
+        { path: '/a' }
+      ]);
+
+      const { matched, path } = router.match('/a?q=123#hash');
+      expect(path).to.equal('/a?q=123#hash');
+      expect(matched).to.be.an('array').that.has.length(1);
 
       const route = matched[0];
       expect(route).to.have.property('path', '/a');
@@ -143,6 +168,38 @@ describe('Router', () => {
   
       expect(outlet.firstChild.param).to.equal('123');
     });
+
+    it('resolves properties function as props', async () => {
+      const router = new Router([
+        {
+          path: '/',
+          component: ParamComponent,
+          properties: () => ({ param: '123' })
+        }
+      ]);
+
+      const outlet = div();
+      await router.connect(outlet);
+      await router.push('/');
+
+      expect(outlet.firstChild.param).to.equal('123');
+    });
+
+    it('passes a route snapshot to the properties function', async () => {
+      const router = new Router([
+        {
+          path: '/',
+          component: ParamComponent,
+          properties: route => ({ param: route.query.get('q') })
+        }
+      ]);
+
+      const outlet = div();
+      await router.connect(outlet);
+      await router.push('/?q=123');
+
+      expect(outlet.firstChild.param).to.equal('123');
+    })
 
     it('nests components from nested routes', async () => {
       const router = new Router([{

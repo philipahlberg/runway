@@ -37,9 +37,7 @@ describe('Route', () => {
     it('supports nesting', () => {
       const route = new Route({
         path: '/a',
-        children: [
-          { path: 'b' }
-        ]
+        children: [{ path: 'b' }]
       });
       const child = route.children[0];
       expect(child.matches('/a/b')).to.be.true;
@@ -76,5 +74,19 @@ describe('Route', () => {
     //   expect(Component).to.exist;
     //   expect(Component.prototype).to.equal(HTMLElement);
     // });
+  });
+
+  describe('#snapshot', () => {
+    it('provides key details of the route in relation to the given path', () => {
+      const route = new Route({ path: '/:param' });
+      const { parameters, query, hash, matched } = route.snapshot(
+        '/123?q=456#hash'
+      );
+
+      expect(parameters.get('param')).to.equal('123');
+      expect(query.get('q')).to.equal('456');
+      expect(hash).to.equal('hash');
+      expect(matched).to.equal('/123');
+    });
   });
 });
