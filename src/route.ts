@@ -4,21 +4,21 @@ import {
   normalize,
   decode,
   split,
-  clone,
   freeze,
   always,
   empty,
-  isFunction
+  isFunction,
+  isModule
 } from './utils';
 
-export interface Module {
+interface Module {
   default: HTMLElement;
 }
 
-export type Component = AsyncComponent | HTMLElement | string;
-export type AsyncComponent = () => Promise<HTMLElement | Module>;
-export type Guard = () => boolean;
-export type Properties = (snapshot: Snapshot) => Dictionary;
+type Component = AsyncComponent | HTMLElement | string;
+type AsyncComponent = () => Promise<HTMLElement | Module>;
+type Guard = () => boolean;
+type Properties = (snapshot: Snapshot) => Dictionary<any>;
 
 export interface Record {
   path: string;
@@ -31,17 +31,11 @@ export interface Record {
   children?: Record[];
 }
 
-export interface Snapshot {
+interface Snapshot {
   readonly parameters: Parameters;
   readonly query: Query;
   readonly hash: string;
   readonly matched: string;
-}
-
-export interface Location {
-  search: string;
-  hash: string;
-  pathname: string;
 }
 
 export class Route extends Path {
@@ -49,11 +43,11 @@ export class Route extends Path {
   path: string;
   exact: boolean;
   component: Component;
-  children: Route[];
   redirect?: string;
   slot?: string;
   guard: Guard;
   properties: Properties;
+  children: Route[];
 
   static async import(identifier: Component): Promise<HTMLElement> {
     if (typeof identifier === 'string') {
@@ -61,25 +55,23 @@ export class Route extends Path {
       // been defined, and return the constructor
       // from the element registry
       return customElements.get(identifier);
-  
     } else if (isFunction(identifier)) {
       // If it's a function, call it
       let called = (identifier as AsyncComponent)();
       // If it's a promise, resolve it
       let resolved = await Promise.resolve(called);
-
-      // If the promise resolved directly to an element,
-      // return it
-      // otherwise, assume that it resolved to a module
-      // with the default export being the element
-      if ((resolved as Module).default) {
+      // If the promise resolved to a module, assume
+      // the constructor is the default export
+      // Otherwise, assume the promise resolved
+      // to a constructor
+      if (isModule(resolved)) {
         return (resolved as Module).default;
       } else {
         return resolved as HTMLElement;
       }
     } else {
-      // If it's not a string or a promise,
-      // it's just
+      // If it's not a string or a function,
+      // assume it's just a constructor
       return identifier as HTMLElement;
     }
   }
@@ -99,7 +91,7 @@ export class Route extends Path {
     // Path should be exact if the route
     // does not have any children,
     // but only if the record does not
-    // declare anything
+    // specifically declare anything
     if (exact == null) {
       exact = (
         children == null ||
@@ -114,10 +106,11 @@ export class Route extends Path {
     this.component = component;
     this.slot = slot;
     this.guard = guard || always;
-    this.properties = freeze(properties || empty);
+    this.properties = properties || empty;
     this.children = (children || []).map(child =>
-      createChildRoute(clone(child), this)
+      createChildRoute(child, this)
     );
+    freeze(this);
   }
 
   async import(): Promise<HTMLElement> {
@@ -131,40 +124,27 @@ export class Route extends Path {
   }
 
   snapshot(identifier: string | Location): Snapshot {
-    let uri;
+    let location;
     if (typeof identifier === 'string') {
-      uri = split(identifier);
+      location = split(identifier);
     } else {
-      uri = identifier;
+      location = identifier;
     }
 
     return freeze({
-      parameters: this.parse(decode(uri.pathname)),
-      query: Query.parse(decode(uri.search)),
-      matched: this.matched(decode(uri.pathname)),
-      hash: uri.hash
+      parameters: this.parse(decode(location.pathname)),
+      query: Query.parse(decode(location.search)),
+      matched: this.matched(decode(location.pathname)),
+      hash: location.hash
     });
   }
 }
 
 function createChildRoute(record: Record, parent: Route): Route {
-  if (record.path === '') {
-    // If the path is empty, simply copy the parent path
-    record.path = parent.path;
-  } else {
-    // Otherwise, prepend the parent path
-    record.path = normalize(parent.path + '/' + record.path);
-  }
-
-  // Same idea with redirect
+  record.path = normalize(parent.path + '/' + record.path);
   if (record.redirect != null) {
-    if (record.redirect === '') {
-      record.redirect = parent.path;
-    } else {
-      record.redirect = normalize(parent.path + '/' + record.redirect);
-    }
+    record.redirect = normalize(parent.path + '/' + record.redirect);
   }
-
   return new Route(record);
 }
 

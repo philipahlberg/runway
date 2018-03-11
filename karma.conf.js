@@ -1,5 +1,4 @@
 const { resolve } = require('path');
-const Webpack = require('webpack');
 
 const webpack = {
   mode: 'development',

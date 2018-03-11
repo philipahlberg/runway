@@ -68,8 +68,6 @@ function search(path) {
  * Determines if the given object is a callable function.
  * An ES2015 class will return false, while ordinary functions,
  * arrow functions, generator functions and async functions return true.
- * @param object the object that is to be inspected
- * @returns `true` if the given object is a callable function
  */
 function isFunction(object) {
     if (!(typeof object === 'function')) {
@@ -96,8 +94,8 @@ function isFunction(object) {
         return isNormalFunction || isArrowFunction;
     }
 }
-function clone(object) {
-    return Object.assign({}, object);
+function isModule(object) {
+    return object[Symbol.toStringTag] === 'Module';
 }
 function freeze(object) {
     return Object.freeze(object);
@@ -111,7 +109,7 @@ function always() {
 function zip(a, b) {
     return a.map((v, i) => [v, b[i]]);
 }
-function dict(pairs) {
+function dictionary(pairs) {
     let index = -1;
     const length = pairs.length;
     const result = {};
@@ -199,7 +197,7 @@ class Parameters extends Map {
         this.path = path;
     }
     all() {
-        return dict(Array.from(this.entries()));
+        return dictionary(Array.from(this.entries()));
     }
 }
 
@@ -217,7 +215,7 @@ class Query extends Map {
         return new Query(entries);
     }
     all() {
-        return dict(Array.from(this.entries()));
+        return dictionary(Array.from(this.entries()));
     }
     toString() {
         let string = '';
@@ -234,7 +232,7 @@ class Route extends Path {
         // Path should be exact if the route
         // does not have any children,
         // but only if the record does not
-        // declare anything
+        // specifically declare anything
         if (exact == null) {
             exact = (children == null ||
                 children.length === 0);
@@ -246,8 +244,9 @@ class Route extends Path {
         this.component = component;
         this.slot = slot;
         this.guard = guard || always;
-        this.properties = freeze(properties || empty);
-        this.children = (children || []).map(child => createChildRoute(clone(child), this));
+        this.properties = properties || empty;
+        this.children = (children || []).map(child => createChildRoute(child, this));
+        freeze(this);
     }
     static async import(identifier) {
         if (typeof identifier === 'string') {
@@ -261,11 +260,11 @@ class Route extends Path {
             let called = identifier();
             // If it's a promise, resolve it
             let resolved = await Promise.resolve(called);
-            // If the promise resolved directly to an element,
-            // return it
-            // otherwise, assume that it resolved to a module
-            // with the default export being the element
-            if (resolved.default) {
+            // If the promise resolved to a module, assume
+            // the constructor is the default export
+            // Otherwise, assume the promise resolved
+            // to a constructor
+            if (isModule(resolved)) {
                 return resolved.default;
             }
             else {
@@ -273,8 +272,8 @@ class Route extends Path {
             }
         }
         else {
-            // If it's not a string or a promise,
-            // it's just
+            // If it's not a string or a function,
+            // assume it's just a constructor
             return identifier;
         }
     }
@@ -289,41 +288,58 @@ class Route extends Path {
         }
     }
     snapshot(identifier) {
-        let uri;
+        let location;
         if (typeof identifier === 'string') {
-            uri = split(identifier);
+            location = split(identifier);
         }
         else {
-            uri = identifier;
+            location = identifier;
         }
         return freeze({
-            parameters: this.parse(decode(uri.pathname)),
-            query: Query.parse(decode(uri.search)),
-            matched: this.matched(decode(uri.pathname)),
-            hash: uri.hash
+            parameters: this.parse(decode(location.pathname)),
+            query: Query.parse(decode(location.search)),
+            matched: this.matched(decode(location.pathname)),
+            hash: location.hash
         });
     }
 }
 Route.cache = new Map();
 function createChildRoute(record, parent) {
-    if (record.path === '') {
-        // If the path is empty, simply copy the parent path
-        record.path = parent.path;
-    }
-    else {
-        // Otherwise, prepend the parent path
-        record.path = normalize(parent.path + '/' + record.path);
-    }
-    // Same idea with redirect
+    record.path = normalize(parent.path + '/' + record.path);
     if (record.redirect != null) {
-        if (record.redirect === '') {
-            record.redirect = parent.path;
-        }
-        else {
-            record.redirect = normalize(parent.path + '/' + record.redirect);
-        }
+        record.redirect = normalize(parent.path + '/' + record.redirect);
     }
     return new Route(record);
+}
+
+const h = history;
+const onpop = Symbol('onpop');
+class History {
+    constructor(listener) {
+        this.onPopstate = listener;
+        this[onpop] = this[onpop].bind(this);
+    }
+    connect() {
+        window.addEventListener('popstate', this[onpop]);
+    }
+    disconnect() {
+        window.removeEventListener('popstate', this[onpop]);
+    }
+    [onpop]() {
+        const to = decode(location.pathname);
+        this.onPopstate(to);
+    }
+    push(path, options = EMPTY) {
+        const { data, title } = options;
+        h.pushState(data, title, path);
+    }
+    replace(path, options = EMPTY) {
+        const { data, title } = options;
+        h.replaceState(data, title, path);
+    }
+    go(delta) {
+        h.go(delta);
+    }
 }
 
 class Router extends EventEmitter {
@@ -333,60 +349,57 @@ class Router extends EventEmitter {
         this.elements = [];
         this.matched = [];
         this.routes = records.map(record => new Route(record));
-        this.onPopstate = this.onPopstate.bind(this);
+        this.onpop = this.onpop.bind(this);
+        this.history = new History(this.onpop);
         Router.instance = this;
     }
-    async connect(target) {
+    async connect(root) {
         this.isConnected = true;
-        this.target = target;
-        window.addEventListener('popstate', this.onPopstate);
-        const currentPath = decode(location.pathname);
-        const { matched, path } = this.match(currentPath);
-        history.replaceState(history.state, document.title, path);
+        this.root = root;
+        const to = decode(location.pathname);
+        const { matched, path } = this.match(to);
+        this.history.connect();
+        this.history.replace(path);
         await this.render(matched);
         this.emit('connect');
     }
     disconnect() {
         this.isConnected = false;
-        window.removeEventListener('popstate', this.onPopstate);
-        this.teardown();
         this.matched = [];
-        this.target = undefined;
+        this.root = undefined;
+        this.teardown();
+        this.history.disconnect();
         this.emit('disconnect');
     }
-    onPopstate() {
-        const to = decode(location.pathname);
+    onpop(to) {
         const { matched, path } = this.match(to);
         if (to !== path) {
-            history.replaceState(history.state, document.title, path);
+            this.history.replace(path);
         }
         this.emit('pop');
         this.render(matched);
     }
-    push(to, options = EMPTY) {
+    push(to, options) {
         to = decode(to);
         const { matched, path } = this.match(to);
-        const { data, title } = options;
-        history.pushState(data, title, path);
+        this.history.push(path, options);
         this.emit('push');
         return this.render(matched);
     }
-    replace(to, options = EMPTY) {
+    replace(to, options) {
         to = decode(to);
         const { matched, path } = this.match(to);
-        const { data, title } = options;
-        history.replaceState(data, title, path);
+        this.history.replace(path, options);
         this.emit('replace');
         return this.render(matched);
     }
     go(entries) {
-        // triggers onPopstate(), so no need to render
+        // triggers onpop(), so no need to render
         // in this method call
-        history.go(entries);
+        this.history.go(entries);
     }
     search(path, routes, matched) {
-        const route = routes
-            .find(r => r.matches(path) && r.guard());
+        const route = routes.find(r => r.matches(path) && r.guard());
         if (route) {
             matched.push(route);
             if (route.redirect) {
@@ -414,7 +427,7 @@ class Router extends EventEmitter {
         return this.search(path, this.routes, []);
     }
     async render(matched) {
-        if (this.target == undefined) {
+        if (this.root == undefined) {
             return;
         }
         // Importing early in case both network
@@ -442,38 +455,61 @@ class Router extends EventEmitter {
             start = matched.length;
         }
         this.matched = matched;
-        // Remove the obsolete elements
+        // Remove the obsolete elements from the DOM
         const removals = this.elements.slice(start);
         while (removals.length > 0) {
             const element = removals.pop();
             element.remove();
         }
+        // Discard removals
         this.elements = this.elements.slice(0, start);
         const components = await load;
         // Create the new elements
-        const additions = components.slice(start)
+        const additions = components
+            .slice(start)
             .map((Component) => new Component());
+        this.elements = this.elements.concat(additions);
+        // Add slot attributes if needed
+        for (let i = start; i < this.elements.length; i++) {
+            const element = this.elements[i];
+            const route = this.matched[i];
+            if (route.slot) {
+                element.setAttribute('slot', route.slot);
+            }
+        }
         // Combine the newly created elements in order
-        // while being careful not to render them yet
+        // Note: they are not connected to the DOM here
         for (let i = 0; i < additions.length - 1; i++) {
             const parent = additions[i];
             const child = additions[i + 1];
             parent.appendChild(child);
         }
-        this.elements = this.elements.concat(additions);
-        // In correct order, resolve any new properties
-        // Note: this happens before the new elements are connected
+        // Resolve any new properties
+        this.update();
+        // If there are any additions, they need to be rendered
+        if (additions.length > 0) {
+            if (start > 0) {
+                // Some reuse
+                // Connect the new elements to the deepest reused element,
+                // implicitly rendering them
+                this.elements[start - 1].appendChild(additions[0]);
+            }
+            else {
+                // No reuse
+                this.root.appendChild(this.elements[0]);
+            }
+        }
+        this.emit('render');
+    }
+    update() {
         for (let i = 0; i < this.elements.length; i++) {
-            // TODO: fix type
             const element = this.elements[i];
-            const route = matched[i];
-            // TODO: fix type
-            const Component = components[i];
-            const options = Component.properties;
+            const options = customElements.get(element.tagName.toLowerCase()).properties;
+            const route = this.matched[i];
             if (options != undefined) {
-                const snapshot = route.snapshot(location);
+                const snapshot = route.snapshot(window.location);
                 const parameters = snapshot.parameters;
-                // Resolve parameters from paths
+                // Resolve parameters from path
                 for (const [key, value] of parameters) {
                     if (options.hasOwnProperty(key)) {
                         element[key] = value;
@@ -488,24 +524,7 @@ class Router extends EventEmitter {
                     }
                 }
             }
-            if (route.slot) {
-                element.setAttribute('slot', route.slot);
-            }
         }
-        // If there are any additions, they need to be rendered
-        if (additions.length > 0) {
-            if (start > 0) {
-                // Some reuse
-                // Connect the new elements to the deepest reused element,
-                // implicitly rendering them
-                this.elements[start - 1].appendChild(additions[0]);
-            }
-            else {
-                // No reuse
-                this.target.appendChild(this.elements[0]);
-            }
-        }
-        this.emit('render');
     }
     teardown() {
         while (this.elements.length > 0) {

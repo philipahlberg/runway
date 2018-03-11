@@ -1,7 +1,7 @@
-import { search, dict } from './utils';
+import { search, dictionary } from './utils';
 
 export class Query extends Map<string, string> {
-  static from(object: Dictionary): Query {
+  static from(object: Dictionary<string>): Query {
     return new Query(Object.entries(object));
   }
 
@@ -18,7 +18,7 @@ export class Query extends Map<string, string> {
   }
 
   all(): Dictionary<string> {
-    return dict(Array.from(this.entries()));
+    return dictionary(Array.from(this.entries()));
   }
 
   toString(): string {

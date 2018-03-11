@@ -1,4 +1,4 @@
-import { pathname, zip, dict } from './utils';
+import { pathname, zip, dictionary } from './utils';
 
 const MATCH_ALL = '[^/]*';
 
@@ -105,6 +105,6 @@ export class Parameters extends Map<string, string> {
   }
 
   all(): Dictionary<string> {
-    return dict(Array.from(this.entries()));
+    return dictionary(Array.from(this.entries()));
   }
 }

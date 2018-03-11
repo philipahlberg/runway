@@ -45,8 +45,6 @@ export function hash(path: string): string {
  * Determines if the given object is a callable function.
  * An ES2015 class will return false, while ordinary functions,
  * arrow functions, generator functions and async functions return true.
- * @param object the object that is to be inspected
- * @returns `true` if the given object is a callable function
  */
 export function isFunction(object: any): boolean {
   if (!(typeof object === 'function')) {
@@ -79,6 +77,10 @@ export function isPromise(object: any): boolean {
   return object[Symbol.toStringTag] === 'Promise';
 }
 
+export function isModule(object: any): boolean {
+  return object[Symbol.toStringTag] === 'Module';
+}
+
 export function clone<T>(object: T): T {
   return Object.assign({}, object);
 }
@@ -103,7 +105,7 @@ export function zip(a: any[], b: any[]): any[] {
   return a.map((v, i) => [v, b[i]]);
 }
 
-export function dict(pairs: [any, any][]): Dictionary<string> {
+export function dictionary(pairs: [any, any][]): Dictionary<string> {
   let index = -1;
   const length = pairs.length;
   const result: Dictionary<string> = {};
