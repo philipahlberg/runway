@@ -1,4 +1,4 @@
-import Router, { RouterLink } from 'lib';
+import Router, { RouterLink } from 'runway';
 
 RouterLink.install();
 

@@ -1,9 +1,9 @@
 {
-  "name": "router",
+  "name": "runway",
   "version": "0.0.0",
   "main": "dist/index.js",
   "module": "dist/index.js",
-  "repository": "https://github.com/philipahlberg/router.git",
+  "repository": "https://github.com/philipahlberg/runway.git",
   "author": "philipahlberg <23071488+philipahlberg@users.noreply.github.com>",
   "license": "MIT",
   "scripts": {

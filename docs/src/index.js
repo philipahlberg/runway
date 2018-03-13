@@ -1,3 +1,3 @@
 import './routes.js';
-import { RouterLink } from 'lib';
+import { RouterLink } from 'runway';
 RouterLink.install();

@@ -5,7 +5,7 @@ module.exports = {
   mode: 'production',
   resolve: {
     alias: {
-      'lib': resolve('./dist/index.js')
+      'runway': resolve('./dist/index.js')
     }
   },
   module: {

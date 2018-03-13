@@ -1,4 +1,4 @@
-import { Path } from 'lib';
+import { Path } from 'runway';
 
 describe('Path', () => {
   describe('#matches', () => {

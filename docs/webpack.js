@@ -10,7 +10,7 @@ module.exports = {
   },
   resolve: {
     alias: {
-      'lib': resolve('./dist/index.js')
+      'runway': resolve('./dist/index.js')
     }
   },
   plugins: [

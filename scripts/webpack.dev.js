@@ -6,7 +6,7 @@ module.exports = {
   resolve: {
     extensions: ['.js', '.ts'],
     alias: {
-      'lib': resolve('./src/index.ts')
+      'runway': resolve('./src/index.ts')
     }
   },
   module: {

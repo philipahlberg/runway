@@ -1,4 +1,4 @@
-import Router from 'lib';
+import Router from 'runway';
 import {
   SimpleComponent,
   ParamComponent,

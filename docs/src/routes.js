@@ -1,4 +1,4 @@
-import Router from 'lib';
+import Router from 'runway';
 import Dashboard from './dashboard.js';
 import Docs from './docs.js';
 
