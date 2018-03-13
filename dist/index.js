@@ -461,8 +461,9 @@ class Router extends EventEmitter {
             const element = removals.pop();
             element.remove();
         }
-        // Discard removals
+        // Discard the removed elements
         this.elements = this.elements.slice(0, start);
+        // Wait for any asynchronous components to load
         const components = await load;
         // Create the new elements
         const additions = components
@@ -485,7 +486,7 @@ class Router extends EventEmitter {
             parent.appendChild(child);
         }
         // Resolve any new properties
-        this.update();
+        this.updateProperties();
         // If there are any additions, they need to be rendered
         if (additions.length > 0) {
             if (start > 0) {
@@ -501,7 +502,7 @@ class Router extends EventEmitter {
         }
         this.emit('render');
     }
-    update() {
+    updateProperties() {
         for (let i = 0; i < this.elements.length; i++) {
             const element = this.elements[i];
             const options = customElements.get(element.tagName.toLowerCase()).properties;
@@ -542,7 +543,7 @@ class RouterLink extends HTMLElement {
         this.onChange = this.onChange.bind(this);
     }
     static install() {
-        customElements.define(this.tagName, this);
+        window.customElements.define(this.tagName, this);
     }
     get anchor() {
         return this.querySelector('a');
@@ -576,6 +577,9 @@ class RouterLink extends HTMLElement {
         return this.hasAttribute('disabled');
     }
     attributesChangedCallback(attr, oldValue, newValue) {
+        if (oldValue === newValue) {
+            return;
+        }
         if (attr === 'disabled') {
             const hasValue = newValue != null;
             if (hasValue) {

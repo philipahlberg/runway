@@ -177,7 +177,7 @@ export class Router extends EventEmitter {
     }
 
     // Resolve any new properties
-    this.update();
+    this.updateProperties();
 
     // If there are any additions, they need to be rendered
     if (additions.length > 0) {
@@ -195,7 +195,7 @@ export class Router extends EventEmitter {
     this.emit('render');
   }
 
-  update() {
+  updateProperties() {
     for (let i = 0; i < this.elements.length; i++) {
       const element = this.elements[i];
       const options = customElements.get(

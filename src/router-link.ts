@@ -57,6 +57,10 @@ export class RouterLink extends HTMLElement {
   }
 
   attributesChangedCallback(attr: string, oldValue: string, newValue: string) {
+    if (oldValue === newValue) {
+      return;
+    }
+
     if (attr === 'disabled') {
       const hasValue = newValue != null;
       if (hasValue) {
