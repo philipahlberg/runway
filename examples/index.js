@@ -1,3 +1,3 @@
-import './routes.js';
-import { RouterLink } from './index.min.js';
+import '/routes.js';
+import { RouterLink } from '/index.min.js';
 RouterLink.install();

@@ -1,12 +1,12 @@
-import Router from './index.min.js';
+import Router from '/index.min.js';
 
-import SignIn from './views/sign-in.js';
-import Admin from './views/admin.js';
-import Dashboard from './views/dashboard.js';
-import Products from './views/products.js';
-import Product from './views/product.js';
+import SignIn from '/views/sign-in.js';
+import Admin from '/views/admin.js';
+import Dashboard from '/views/dashboard.js';
+import Products from '/views/products.js';
+import Product from '/views/product.js';
 
-import { user } from './auth.js';
+import { user } from '/auth.js';
 
 const router = new Router([
   // A simple matcher

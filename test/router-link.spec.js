@@ -22,6 +22,10 @@ describe('<router-link>', async () => {
     await router.push('/');
   });
 
+  after(() => {
+    router.disconnect();
+  });
+
   it('applies active attribute when it matches', async () => {
     const link = new RouterLink();
     link.appendChild(a('/abc'));
@@ -35,18 +39,17 @@ describe('<router-link>', async () => {
     expect(link.active).to.be.true;
   });
 
-  it('intercepts clicks');
-  // it('intercepts clicks', async () => {
-  //   const link = new RouterLink();
-  //   const anchor = a('/abc');
-  //   link.appendChild(a('/abc'));
-  //   connect(link);
+  it.skip('intercepts clicks', async () => {
+    const link = new RouterLink();
+    const anchor = a('/abc');
+    link.appendChild(a('/abc'));
+    connect(link);
 
-  //   anchor.click();
-  //   await Promise.resolve();
+    anchor.click();
+    await Promise.resolve();
 
-  //   expect(link.active).to.be.true;
-  // });
+    expect(link.active).to.be.true;
+  });
 
   it('can be configured to match exactly', async () => {
     const link = new RouterLink();

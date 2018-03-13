@@ -1,5 +1,5 @@
-import Router from '../routes.js';
-import { signin } from '../auth.js';
+import Router from '/routes.js';
+import { signin } from '/auth.js';
 
 export default class SignIn extends HTMLElement {
   connectedCallback() {

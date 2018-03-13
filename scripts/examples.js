@@ -3,11 +3,6 @@ const static = require('koa-static');
 const fs = require('fs');
 const server = new Koa();
 
-// server.use(async (ctx, next) => {
-//   ctx.path = ctx.path.replace(/\/.*\/(.*)/, '$1');
-//   return next();
-// });
-
 server.use(static('examples'));
 server.use(static('dist'));
 

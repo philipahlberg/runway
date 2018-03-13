@@ -63,17 +63,16 @@ describe('Route', () => {
       expect(Component).to.equal(SimpleComponent);
     });
 
-    it('resolves an imported component');
-    // it('resolves an imported component', async () => {
-    //   const route = new Route({
-    //     path: '/',
-    //     component: () => import('./import.js')
-    //   });
+    it.skip('resolves an imported component', async () => {
+      const route = new Route({
+        path: '/',
+        component: () => import('./import.js')
+      });
 
-    //   const Component = await route.import();
-    //   expect(Component).to.exist;
-    //   expect(Component.prototype).to.equal(HTMLElement);
-    // });
+      const Component = await route.import();
+      expect(Component).to.exist;
+      expect(Component.prototype).to.equal(HTMLElement);
+    });
   });
 
   describe('#snapshot', () => {
