@@ -28,6 +28,11 @@ export class Router extends EventEmitter {
     Router.instance = this;
   }
 
+  /**
+   * Connect the router to an element.
+   * This checks the current location for matching,
+   * and renders those matched elements.
+   */
   async connect(root: HTMLElement): Promise<void> {
     this.isConnected = true;
     this.root = root;
@@ -39,6 +44,11 @@ export class Router extends EventEmitter {
     this.emit('connect');
   }
 
+  /**
+   * Disconnect the router from it's current root element.
+   * This removes all the elements currently rendered, and
+   * removes all listeners, effectively leaving the router inactive.
+   */
   disconnect(): void {
     this.isConnected = false;
     this.matched = [];
@@ -48,6 +58,9 @@ export class Router extends EventEmitter {
     this.emit('disconnect');
   }
 
+  /**
+   * @private
+   */
   onpop(to: string): void {
     const { matched, path } = this.match(to);
     if (to !== path) {
@@ -57,6 +70,9 @@ export class Router extends EventEmitter {
     this.render(matched);
   }
 
+  /**
+   * Push a history entry onto the stack.
+   */
   push(to: string, options?: Options): Promise<void> {
     to = decode(to);
     const { matched, path } = this.match(to);
@@ -65,6 +81,9 @@ export class Router extends EventEmitter {
     return this.render(matched);
   }
 
+  /**
+   * Replace the topmost entry in the history stack.
+   */
   replace(to: string, options?: Options): Promise<void> {
     to = decode(to);
     const { matched, path } = this.match(to);
@@ -73,12 +92,18 @@ export class Router extends EventEmitter {
     return this.render(matched);
   }
 
+  /**
+   * Traverse through the history stack.
+   */
   go(entries: number) {
     // triggers onpop(), so no need to render
     // in this method call
     this.history.go(entries);
   }
 
+  /**
+   * @private
+   */
   search(path: string, routes: Route[], matched: Route[]): SearchResult {
     const route = routes.find(r => r.matches(path) && r.guard());
 
@@ -103,10 +128,19 @@ export class Router extends EventEmitter {
     }
   }
 
+  /**
+   * Search for the elements that would match the given path.
+   * If a redirect is encountered, it will be followed.
+   * The resulting path and the matched elements are returned.
+   */
   match(path: string): SearchResult {
     return this.search(path, this.routes, []);
   }
 
+  /**
+   * Render the given routes.
+   * The routes are assumed to be nested.
+   */
   async render(matched: Route[]) {
     if (this.root == undefined) {
       return;
@@ -195,6 +229,9 @@ export class Router extends EventEmitter {
     this.emit('render');
   }
 
+  /**
+   * Update all `:param` bindings and `properties` functions in the tree.
+   */
   updateProperties() {
     for (let i = 0; i < this.elements.length; i++) {
       const element = this.elements[i];
@@ -225,6 +262,9 @@ export class Router extends EventEmitter {
     }
   }
 
+  /**
+   * Remove all currently active elements.
+   */
   teardown() {
     while (this.elements.length > 0) {
       const element = this.elements.pop();

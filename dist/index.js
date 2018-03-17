@@ -95,7 +95,7 @@ function isFunction(object) {
     }
 }
 function isModule(object) {
-    return object[Symbol.toStringTag] === 'Module';
+    return object[Symbol.toStringTag] === 'Module' || object.__esModule;
 }
 function freeze(object) {
     return Object.freeze(object);
@@ -543,7 +543,7 @@ class RouterLink extends HTMLElement {
         this.onChange = this.onChange.bind(this);
     }
     static install() {
-        window.customElements.define(this.tagName, this);
+        customElements.define(this.tagName, this);
     }
     get anchor() {
         return this.querySelector('a');
