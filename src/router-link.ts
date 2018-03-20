@@ -1,4 +1,5 @@
 import Router from './router';
+import { decode } from './utils';
 
 export class RouterLink extends HTMLElement {
   static observedAttributes = ['disabled'];
@@ -22,17 +23,17 @@ export class RouterLink extends HTMLElement {
 
   set to(v: string) {
     this.anchor!.href = v;
-    const path = decodeURIComponent(location.pathname);
+    const path = decode(location.pathname);
     this.active = this.match(path);
   }
 
   get to(): string {
-    return decodeURIComponent(this.anchor!.pathname);
+    return decode(this.anchor!.pathname);
   }
 
   set exact(v: boolean) {
     this.toggleAttribute('exact', v);
-    const path = decodeURIComponent(location.pathname);
+    const path = decode(location.pathname);
     this.active = this.match(path);
   }
 
@@ -137,7 +138,7 @@ export class RouterLink extends HTMLElement {
   }
 
   onChange() {
-    const path = decodeURIComponent(location.pathname);
+    const path = decode(location.pathname);
     this.active = this.match(path);
   }
 }

@@ -1,5 +1,5 @@
 # Runway
-A modern router for web components.
+A modern router for single-page applications built with web components.
 
 # Development
 To start a development environment, run:

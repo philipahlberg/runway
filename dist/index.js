@@ -37,9 +37,15 @@ class EventEmitter {
 function normalize(path) {
     return ('/' + path).replace(/[\/]+/g, '/');
 }
+/**
+ * Shorthand for `decodeURIComponent`
+ */
 function decode(str) {
     return decodeURIComponent(str);
 }
+/**
+ * Split the pathname, search (query) and hash of a path.
+ */
 function split(path) {
     let temp = path.split('#');
     const hash = temp[1] || '';
@@ -52,9 +58,15 @@ function split(path) {
         hash
     };
 }
+/**
+ * Extract the pathname of a path (i. e. excluding the search and hash).
+ */
 function pathname(path) {
     return (path.split('#')[0] || '').split('?')[0];
 }
+/**
+ * Extract the search (query) of a path.
+ */
 function search(path) {
     path = (path.split('#')[0] || '');
     if (/\?/.test(path)) {
@@ -94,21 +106,41 @@ function isFunction(object) {
         return isNormalFunction || isArrowFunction;
     }
 }
+/**
+ * Determine if the given object is an ES module (the return value of `import()`)
+ * or a shim (like `require()`)
+ */
 function isModule(object) {
     return object[Symbol.toStringTag] === 'Module' || object.__esModule;
 }
+/**
+ * Shorthand for `Object.freeze`.
+ */
 function freeze(object) {
     return Object.freeze(object);
 }
+/**
+ * Shorthand for `Object.create(null)`.
+ */
 function empty() {
     return Object.create(null);
 }
+/**
+ * Always returns `true`.
+ */
 function always() {
     return true;
 }
+/**
+ * Combine two arrays to an array of tuples.
+ */
 function zip(a, b) {
     return a.map((v, i) => [v, b[i]]);
 }
+/**
+ * Convert an array of tuples to an object in which each key
+ * is the first element of the tuple and the value is the second element of the tuple.
+ */
 function dictionary(pairs) {
     let index = -1;
     const length = pairs.length;
@@ -119,6 +151,9 @@ function dictionary(pairs) {
     }
     return result;
 }
+/**
+ * A frozen object with no prototype chain.
+ */
 const EMPTY = freeze(Object.create(null));
 
 const MATCH_ALL = '[^/]*';
@@ -353,6 +388,11 @@ class Router extends EventEmitter {
         this.history = new History(this.onpop);
         Router.instance = this;
     }
+    /**
+     * Connect the router to an element.
+     * This checks the current location for matching,
+     * and renders those matched elements.
+     */
     async connect(root) {
         this.isConnected = true;
         this.root = root;
@@ -363,6 +403,11 @@ class Router extends EventEmitter {
         await this.render(matched);
         this.emit('connect');
     }
+    /**
+     * Disconnect the router from it's current root element.
+     * This removes all the elements currently rendered, and
+     * removes all listeners, effectively leaving the router inactive.
+     */
     disconnect() {
         this.isConnected = false;
         this.matched = [];
@@ -371,6 +416,9 @@ class Router extends EventEmitter {
         this.history.disconnect();
         this.emit('disconnect');
     }
+    /**
+     * @private
+     */
     onpop(to) {
         const { matched, path } = this.match(to);
         if (to !== path) {
@@ -379,6 +427,9 @@ class Router extends EventEmitter {
         this.emit('pop');
         this.render(matched);
     }
+    /**
+     * Push a history entry onto the stack.
+     */
     push(to, options) {
         to = decode(to);
         const { matched, path } = this.match(to);
@@ -386,6 +437,9 @@ class Router extends EventEmitter {
         this.emit('push');
         return this.render(matched);
     }
+    /**
+     * Replace the topmost entry in the history stack.
+     */
     replace(to, options) {
         to = decode(to);
         const { matched, path } = this.match(to);
@@ -393,11 +447,17 @@ class Router extends EventEmitter {
         this.emit('replace');
         return this.render(matched);
     }
+    /**
+     * Traverse through the history stack.
+     */
     go(entries) {
         // triggers onpop(), so no need to render
         // in this method call
         this.history.go(entries);
     }
+    /**
+     * @private
+     */
     search(path, routes, matched) {
         const route = routes.find(r => r.matches(path) && r.guard());
         if (route) {
@@ -423,9 +483,18 @@ class Router extends EventEmitter {
             return { matched, path };
         }
     }
+    /**
+     * Search for the elements that would match the given path.
+     * If a redirect is encountered, it will be followed.
+     * The resulting path and the matched elements are returned.
+     */
     match(path) {
         return this.search(path, this.routes, []);
     }
+    /**
+     * Render the given routes.
+     * The routes are assumed to be nested.
+     */
     async render(matched) {
         if (this.root == undefined) {
             return;
@@ -502,6 +571,9 @@ class Router extends EventEmitter {
         }
         this.emit('render');
     }
+    /**
+     * Update all `:param` bindings and `properties` functions in the tree.
+     */
     updateProperties() {
         for (let i = 0; i < this.elements.length; i++) {
             const element = this.elements[i];
@@ -527,6 +599,9 @@ class Router extends EventEmitter {
             }
         }
     }
+    /**
+     * Remove all currently active elements.
+     */
     teardown() {
         while (this.elements.length > 0) {
             const element = this.elements.pop();
@@ -550,15 +625,15 @@ class RouterLink extends HTMLElement {
     }
     set to(v) {
         this.anchor.href = v;
-        const path = decodeURIComponent(location.pathname);
+        const path = decode(location.pathname);
         this.active = this.match(path);
     }
     get to() {
-        return decodeURIComponent(this.anchor.pathname);
+        return decode(this.anchor.pathname);
     }
     set exact(v) {
         this.toggleAttribute('exact', v);
-        const path = decodeURIComponent(location.pathname);
+        const path = decode(location.pathname);
         this.active = this.match(path);
     }
     get exact() {
@@ -647,7 +722,7 @@ class RouterLink extends HTMLElement {
         }
     }
     onChange() {
-        const path = decodeURIComponent(location.pathname);
+        const path = decode(location.pathname);
         this.active = this.match(path);
     }
 }
