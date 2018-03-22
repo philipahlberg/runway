@@ -141,7 +141,11 @@ export class Route extends Path {
 }
 
 function createChildRoute(record: Record, parent: Route): Route {
-  record.path = normalize(parent.path + '/' + record.path);
+  if (record.path === '') {
+    record.path = parent.path;
+  } else {
+    record.path = normalize(parent.path + '/' + record.path);
+  }
   if (record.redirect != null) {
     record.redirect = normalize(parent.path + '/' + record.redirect);
   }

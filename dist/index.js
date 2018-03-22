@@ -340,7 +340,12 @@ class Route extends Path {
 }
 Route.cache = new Map();
 function createChildRoute(record, parent) {
-    record.path = normalize(parent.path + '/' + record.path);
+    if (record.path === '') {
+        record.path = parent.path;
+    }
+    else {
+        record.path = normalize(parent.path + '/' + record.path);
+    }
     if (record.redirect != null) {
         record.redirect = normalize(parent.path + '/' + record.redirect);
     }
