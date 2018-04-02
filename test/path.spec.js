@@ -1,4 +1,4 @@
-import { Path } from 'runway';
+import { Path } from '../src/path';
 
 describe('Path', () => {
   describe('#matches', () => {

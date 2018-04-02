@@ -1,4 +1,4 @@
-import { Query } from 'runway';
+import { Query } from '../src/query';
 
 describe('Query', () => {
   describe('.from', () => {

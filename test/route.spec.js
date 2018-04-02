@@ -1,4 +1,4 @@
-import { Route } from 'runway';
+import { Route } from '../src/route';
 import {
   SimpleComponent,
   ParamComponent,
@@ -9,11 +9,6 @@ describe('Route', () => {
   describe('.import', () => {
     it('resolves an ordinary component', async () => {
       const Component = await Route.import(SimpleComponent);
-      expect(Component).to.equal(SimpleComponent);
-    });
-
-    it('resolves a string', async () => {
-      const Component = await Route.import('simple-component');
       expect(Component).to.equal(SimpleComponent);
     });
 
@@ -63,6 +58,8 @@ describe('Route', () => {
       expect(Component).to.equal(SimpleComponent);
     });
 
+    // Pending karma-webpack issue
+    // https://github.com/webpack-contrib/karma-webpack/issues/316
     it.skip('resolves an imported component', async () => {
       const route = new Route({
         path: '/',

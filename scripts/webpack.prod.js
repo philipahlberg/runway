@@ -4,8 +4,9 @@ const { resolve } = require('path');
 module.exports = {
   mode: 'production',
   resolve: {
+    extensions: ['.js', '.ts'],
     alias: {
-      'runway': resolve('./dist/index.js')
+      'runway': resolve('./src')
     }
   },
   module: {

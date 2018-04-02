@@ -9,7 +9,7 @@
   "scripts": {
     "start": "npm run dev",
     "dev": "karma start scripts/karma.dev.js",
-    "test": "rollup -c && karma start scripts/karma.prod.js",
+    "test": "karma start scripts/karma.prod.js",
     "build": "rollup -c",
     "lint": "eslint src",
     "format": "prettier",

@@ -1,4 +1,5 @@
-import Router, { RouterLink } from 'runway';
+import { Router } from '../src/router';
+import { RouterLink } from '../src/router-link';
 
 RouterLink.install();
 
@@ -39,6 +40,8 @@ describe('<router-link>', async () => {
     expect(link.active).to.be.true;
   });
 
+  // Does a full page reload for some reason.
+  // Skipped until the cause has been found.
   it.skip('intercepts clicks', async () => {
     const link = new RouterLink();
     const anchor = a('/abc');
