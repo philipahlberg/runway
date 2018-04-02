@@ -276,21 +276,16 @@ class Route extends Path {
         this.path = path;
         this.exact = exact;
         this.redirect = redirect;
-        this.component = component;
+        this.component = typeof component === 'string'
+            ? customElements.get(component)
+            : component;
         this.slot = slot;
         this.guard = guard || always;
         this.properties = properties || empty;
         this.children = (children || []).map(child => createChildRoute(child, this));
-        freeze(this);
     }
     static async import(identifier) {
-        if (typeof identifier === 'string') {
-            // If it's a string, assume that it has
-            // been defined, and return the constructor
-            // from the element registry
-            return customElements.get(identifier);
-        }
-        else if (isFunction(identifier)) {
+        if (isFunction(identifier)) {
             // If it's a function, call it
             let called = identifier();
             // If it's a promise, resolve it
@@ -307,38 +302,37 @@ class Route extends Path {
             }
         }
         else {
-            // If it's not a string or a function,
-            // assume it's just a constructor
+            // If it's not a function,
+            // assume it's a constructor
             return identifier;
         }
     }
     async import() {
-        if (Route.cache.has(this.component)) {
+        if (!isFunction(this.component)) {
+            return this.component;
+        }
+        else if (Route.cache.has(this.component)) {
             return Route.cache.get(this.component);
         }
         else {
-            let ctor = await Route.import(this.component);
+            const ctor = await Route.import(this.component);
             Route.cache.set(this.component, ctor);
             return ctor;
         }
     }
-    snapshot(identifier) {
-        let location;
-        if (typeof identifier === 'string') {
-            location = split(identifier);
-        }
-        else {
-            location = identifier;
-        }
-        return freeze({
-            parameters: this.parse(decode(location.pathname)),
-            query: Query.parse(decode(location.search)),
-            matched: this.matched(decode(location.pathname)),
-            hash: location.hash
-        });
+    snapshot(location) {
+        const { pathname: pathname$$1, search: search$$1, hash: hash$$1 } = typeof location === 'string'
+            ? split(location)
+            : location;
+        return {
+            parameters: this.parse(decode(pathname$$1)),
+            query: Query.parse(decode(search$$1)),
+            matched: this.matched(decode(pathname$$1)),
+            hash: hash$$1
+        };
     }
 }
-Route.cache = new Map();
+Route.cache = new WeakMap();
 function createChildRoute(record, parent) {
     if (record.path === '') {
         record.path = parent.path;
@@ -489,6 +483,7 @@ class Router extends EventEmitter {
         }
     }
     /**
+     * @private
      * Search for the elements that would match the given path.
      * If a redirect is encountered, it will be followed.
      * The resulting path and the matched elements are returned.
@@ -497,6 +492,7 @@ class Router extends EventEmitter {
         return this.search(path, this.routes, []);
     }
     /**
+     * @private
      * Render the given routes.
      * The routes are assumed to be nested.
      */
@@ -746,4 +742,4 @@ RouterLink.observedAttributes = ['disabled'];
 RouterLink.tagName = 'router-link';
 
 export default Router;
-export { Path, Query, Route, RouterLink };
+export { Router, RouterLink, Query };
