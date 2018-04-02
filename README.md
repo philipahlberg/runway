@@ -17,7 +17,7 @@ Exported as `Router` and `default`.
 - **constructor(routes: Record[]): Router**
 
   Creates the router instance. Note that this does not render anything, nor does it add any listeners.
-- **connect(root: HTMLElement): Promise<void>**
+- **connect(root: HTMLElement): Promise\<void>**
 
   Connect the router to the DOM. The promise resolves once every component has been loaded and connected.
 - **disconnect(): void**
@@ -44,7 +44,7 @@ Exported as `Router` and `default`.
   Use the component's class declaration for eagerly-loaded components, or pass a function that returns a Promise (like `() => import('./component.js`) to lazy-load the component when the route matches the first time.
 - **exact?: boolean**
 
-  Whether or not the route should match "exactly" or not; `{ path: '/', exact: false }` would match any path (because any path beginds with '/') while `{ path: '/' exact: true }` would *only* match '/'.
+  Whether or not the route should match "exactly"; `{ path: '/', exact: false }` would match any path (because any path begins with '/') while `{ path: '/' exact: true }` would *only* match '/'.
   By default, the route will match exactly when no child routes are attached, otherwise it will not.
 - **redirect?: string**
 
@@ -108,7 +108,7 @@ or as a wrapper around an `<a>` element:
 ```
 The latter is useful if progressive enhancement is desired (e.g. if JavaScript is disabled, navigation is still possible).
 
-If you're changing the target of the link during it's lifetime (e.g. if you're using a data-binding system), using the `to` attribute/property is preferred, as that will notify the element when any changes occur and apply the `active` attribute as appropriate. The two usage patterns can be combined:
+If you're changing the target of the link during it's lifetime (e.g. if you're using a data-binding system), using the `to` attribute/property is preferred, as that will notify the element when any changes occur and apply the `active` attribute as appropriate. The two patterns can be combined:
 ```html
 <router-link to="/path">
   <a>Link</a>
