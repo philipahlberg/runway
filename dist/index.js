@@ -533,7 +533,7 @@ class Router extends EventEmitter {
         const removals = this.elements.slice(start);
         while (removals.length > 0) {
             const element = removals.pop();
-            element.remove();
+            element.parentElement.removeChild(element);
         }
         // Discard the removed elements
         this.elements = this.elements.slice(0, start);
@@ -610,7 +610,7 @@ class Router extends EventEmitter {
     teardown() {
         while (this.elements.length > 0) {
             const element = this.elements.pop();
-            element.remove();
+            element.parentElement.removeChild(element);
         }
     }
 }
@@ -625,21 +625,15 @@ class RouterLink extends HTMLElement {
     static install() {
         customElements.define(this.tagName, this);
     }
-    get anchor() {
-        return this.querySelector('a');
-    }
     set to(v) {
-        this.anchor.href = v;
-        const path = decode(location.pathname);
-        this.active = this.match(path);
+        this.setAttribute('to', v);
     }
     get to() {
-        return decode(this.anchor.pathname);
+        return this.getAttribute('to');
     }
     set exact(v) {
         this.toggleAttribute('exact', v);
-        const path = decode(location.pathname);
-        this.active = this.match(path);
+        this.active = this.test(decode(location.pathname));
     }
     get exact() {
         return this.hasAttribute('exact');
@@ -657,6 +651,7 @@ class RouterLink extends HTMLElement {
         return this.hasAttribute('disabled');
     }
     attributesChangedCallback(attr, oldValue, newValue) {
+        console.log({ attr, oldValue, newValue });
         if (oldValue === newValue) {
             return;
         }
@@ -671,8 +666,24 @@ class RouterLink extends HTMLElement {
                 this.onChange();
             }
         }
+        else if (attr === 'to') {
+            const a = this.querySelector('a');
+            if (a) {
+                a.href = newValue;
+            }
+            this.active = this.test(decode(location.pathname));
+        }
     }
     connectedCallback() {
+        const a = this.querySelector('a');
+        if (a) {
+            if (!this.to) {
+                this.to = decode(a.pathname);
+            }
+            else {
+                a.href = this.to;
+            }
+        }
         this.addEventListener('click', this.onClick);
         this.router.on('render', this.onChange);
         this.onChange();
@@ -682,14 +693,19 @@ class RouterLink extends HTMLElement {
         this.router.off('render', this.onChange);
     }
     toggleAttribute(name, predicate) {
-        if (predicate) {
-            this.setAttribute(name, '');
+        if (predicate != null) {
+            if (predicate) {
+                this.setAttribute(name, '');
+            }
+            else {
+                this.removeAttribute(name);
+            }
         }
         else {
-            this.removeAttribute(name);
+            this.toggleAttribute(name, !this.hasAttribute(name));
         }
     }
-    match(path) {
+    test(path) {
         const to = this.to;
         if (to.startsWith('/')) {
             return this.exact
@@ -701,34 +717,29 @@ class RouterLink extends HTMLElement {
         }
     }
     onClick(event) {
+        if (
         // Ignore clicks with modifiers
-        if (event.metaKey ||
+        event.metaKey ||
             event.altKey ||
             event.ctrlKey ||
-            event.shiftKey) {
-            return;
-        }
-        // Ignore prevented clicks
-        if (event.defaultPrevented) {
-            return;
-        }
-        // Ignore right mouse button clicks
-        if (event.button !== undefined &&
-            event.button !== 0) {
+            event.shiftKey ||
+            // Ignore prevented clicks
+            event.defaultPrevented ||
+            // Ignore right mouse button clicks
+            (event.button !== undefined &&
+                event.button !== 0)) {
             return;
         }
         event.preventDefault();
-        const to = this.to;
-        if (this.disabled || !to) {
+        if (this.disabled || !this.to) {
             return;
         }
         else {
-            this.router.push(to);
+            this.router.push(this.to);
         }
     }
     onChange() {
-        const path = decode(location.pathname);
-        this.active = this.match(path);
+        this.active = this.test(decode(location.pathname));
     }
 }
 RouterLink.observedAttributes = ['disabled'];
