@@ -17,24 +17,17 @@ export class RouterLink extends HTMLElement {
     this.onChange = this.onChange.bind(this);
   }
 
-  get anchor() {
-    return this.querySelector('a');
-  }
-
   set to(v: string) {
-    this.anchor!.href = v;
-    const path = decode(location.pathname);
-    this.active = this.match(path);
+    this.setAttribute('to', v);
   }
 
-  get to(): string {
-    return decode(this.anchor!.pathname);
+  get to() {
+    return this.getAttribute('to') as string;
   }
 
   set exact(v: boolean) {
     this.toggleAttribute('exact', v);
-    const path = decode(location.pathname);
-    this.active = this.match(path);
+    this.active = this.test(decode(location.pathname));
   }
 
   get exact(): boolean {
@@ -58,6 +51,7 @@ export class RouterLink extends HTMLElement {
   }
 
   attributesChangedCallback(attr: string, oldValue: string, newValue: string) {
+    console.log({ attr, oldValue, newValue });
     if (oldValue === newValue) {
       return;
     }
@@ -71,10 +65,24 @@ export class RouterLink extends HTMLElement {
         this.router.on('render', this.onChange);
         this.onChange();
       }
+    } else if (attr === 'to') {
+      const a = this.querySelector('a');
+      if (a) {
+        a.href = newValue;
+      }
+      this.active = this.test(decode(location.pathname));
     }
   }
 
   connectedCallback() {
+    const a = this.querySelector('a');
+    if (a) {
+      if (!this.to) {
+        this.to = decode(a.pathname);
+      } else {
+        a.href = this.to;
+      }
+    }
     this.addEventListener('click', this.onClick);
     this.router.on('render', this.onChange);
     this.onChange();
@@ -86,14 +94,18 @@ export class RouterLink extends HTMLElement {
   }
 
   toggleAttribute(name: string, predicate: boolean) {
-    if (predicate) {
-      this.setAttribute(name, '');
+    if (predicate != null) {
+      if (predicate) {
+        this.setAttribute(name, '');
+      } else {
+        this.removeAttribute(name);
+      }
     } else {
-      this.removeAttribute(name);
+      this.toggleAttribute(name, !this.hasAttribute(name));
     }
   }
 
-  match(path: string): boolean {
+  test(path: string): boolean {
     const to = this.to;
     if (to.startsWith('/')) {
       return this.exact
@@ -105,41 +117,31 @@ export class RouterLink extends HTMLElement {
   }
 
   onClick(event: MouseEvent) {
-    // Ignore clicks with modifiers
     if (
+      // Ignore clicks with modifiers
       event.metaKey ||
       event.altKey ||
       event.ctrlKey ||
-      event.shiftKey
-    ) {
-      return;
-    }
-
-    // Ignore prevented clicks
-    if (event.defaultPrevented) {
-      return;
-    }
-
-    // Ignore right mouse button clicks
-    if (
-      event.button !== undefined &&
-      event.button !== 0
+      event.shiftKey ||
+      // Ignore prevented clicks
+      event.defaultPrevented ||
+      // Ignore right mouse button clicks
+      (event.button !== undefined &&
+      event.button !== 0)
     ) {
       return;
     }
 
     event.preventDefault();
-    const to = this.to;
-    if (this.disabled || !to) {
+    if (this.disabled || !this.to) {
       return;
     } else {
-      this.router.push(to);
+      this.router.push(this.to);
     }
   }
 
   onChange() {
-    const path = decode(location.pathname);
-    this.active = this.match(path);
+    this.active = this.test(decode(location.pathname));
   }
 }
 

@@ -12,26 +12,27 @@
         box-sizing: border-box;
       }
 
+      router-link[active],
       router-link[active] > a {
         color: green;
       }
     </style>
   </head>
   <body>
-    <router-link>
-      <a href="/dashboard">Dashboard</a>
+    <router-link to="/dashboard">
+      <a>Dashboard</a>
     </router-link>
-    <router-link>
-      <a href="/signin">Sign In</a>
+    <router-link to="/signin">
+      <a>Sign In</a>
     </router-link>
-    <router-link>
-      <a href="/signup">Sign Up</a>
+    <router-link to="/signup">
+      <a>Sign Up</a>
     </router-link>
-    <router-link>
-      <a href="/admin">Admin</a>
+    <router-link to="/admin">
+      <a>Admin</a>
     </router-link>
-    <router-link>
-      <a href="/products">Products</a>
+    <router-link to="/products">
+      <a>Products</a>
     </router-link>
   </body>
 </html>
