@@ -178,7 +178,7 @@ export class Router extends EventEmitter {
     const removals = this.elements.slice(start);
     while (removals.length > 0) {
       const element = removals.pop();
-      element!.remove();
+      element!.parentElement!.removeChild(element!);
     }
 
     // Discard the removed elements
@@ -268,7 +268,7 @@ export class Router extends EventEmitter {
   teardown() {
     while (this.elements.length > 0) {
       const element = this.elements.pop();
-      element!.remove();
+      element!.parentElement!.removeChild(element!);
     }
   }
 }
