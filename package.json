@@ -6,6 +6,14 @@
   "repository": "https://github.com/philipahlberg/runway.git",
   "author": "philipahlberg <23071488+philipahlberg@users.noreply.github.com>",
   "license": "MIT",
+  "keywords": [
+    "router",
+    "routing",
+    "web components",
+    "custom elements",
+    "lazy-loading",
+    "single-page application"
+  ],
   "scripts": {
     "start": "npm run dev",
     "dev": "karma start scripts/karma.dev.js",
