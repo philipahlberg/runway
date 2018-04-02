@@ -22,7 +22,7 @@
     "lint": "eslint src",
     "format": "prettier",
     "docs": "webpack-serve docs/webpack.js",
-    "examples": "node scripts/examples.js"
+    "examples": "node scripts/example.js"
   },
   "devDependencies": {
     "@webcomponents/custom-elements": "^1.0.8",

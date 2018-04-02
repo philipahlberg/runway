@@ -1,10 +1,10 @@
 const Koa = require('koa');
-const static = require('koa-static');
+const serve = require('koa-static');
 const fs = require('fs');
 const server = new Koa();
 
-server.use(static('examples'));
-server.use(static('dist'));
+server.use(serve('example'));
+server.use(serve('dist'));
 
 server.use(async (ctx) => {
   if (!/\./.test(ctx.path) && ctx.accepts('html')) {
