@@ -5,7 +5,9 @@ const users = [{
   signedIn: false
 }];
 
-export let user = {};
+const guest = { signedIn: false };
+
+export let user = guest;
 
 export function signin(name, password) {
   user = users
@@ -18,6 +20,7 @@ export function signin(name, password) {
     user.signedIn = true;
     return true;
   } else {
+    user = guest;
     return false;
   }
 }
