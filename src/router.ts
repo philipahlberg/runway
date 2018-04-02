@@ -129,6 +129,7 @@ export class Router extends EventEmitter {
   }
 
   /**
+   * @private
    * Search for the elements that would match the given path.
    * If a redirect is encountered, it will be followed.
    * The resulting path and the matched elements are returned.
@@ -138,6 +139,7 @@ export class Router extends EventEmitter {
   }
 
   /**
+   * @private
    * Render the given routes.
    * The routes are assumed to be nested.
    */

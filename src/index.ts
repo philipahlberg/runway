@@ -1,5 +1,3 @@
-export { default } from './router';
-export { Path } from './path';
-export { Query } from './query';
-export { Route } from './route';
+export { Router, default } from './router';
 export { RouterLink } from './router-link';
+export { Query } from './query';

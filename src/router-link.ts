@@ -4,7 +4,7 @@ import { decode } from './utils';
 export class RouterLink extends HTMLElement {
   static observedAttributes = ['disabled'];
   static tagName = 'router-link';
-  router: Router;
+  private router: Router;
 
   static install() {
     customElements.define(this.tagName, this);
