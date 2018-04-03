@@ -1,15 +1,109 @@
 # Runway
-A modern router for single-page applications that use web components.
+A modern router for building single-page applications with web components.
 
 ## Overview
 Runway is heavily inspired by the Vue router, so if you've used that before, you should feel right at home with Runway.
-For an in-depth example of using the router, take a look at the example directory (or try it out with `yarn run example`).
+Getting started with Runway is fairly simple. To render a component into the document body, provide the router with a record with two properties: a `path`, that when a user visits it, you want your component to be rendered, and a `component`, which is the component you want rendered:
+```js
+import Router from 'runway';
+import Component from './my-component.js';
 
-### Features
-- Familiar API inspired by Vue
-- Built for native web components
-- Intuitive lazy-loading using `import()`
-- Performant and light-weight
+const router = new Router([
+  {
+    // Trailing slashes are optional, so '/' matches both example.com and example.com/
+    path: '/',
+    component: Component
+  }
+]);
+
+// Connect the router to the document body (and render, if the path matches)
+router.connect(document.body);
+```
+
+You can use Express-like named parameters in paths:
+```js
+const router = new Router([
+  {
+    path: '/:param',
+    component: Component
+  }
+]);
+```
+If the associated component has a static `properties` object (like you would use with Polymer), and it contains a key matching the parameters name, the value of the parameter in the path will automatically be passed to the component.
+
+If you need to pass another value, like the hash or the query of the current location, you can use a `properties` function to do so:
+```js
+const router = new Router([
+  {
+    path: '/login',
+    component: LoginComponent,
+    properties: (route) => ({
+      redirect: route.query.get('redirect')
+    })
+  }
+]);
+```
+
+Here, the components' `redirect` property will be passed the value of the corresponding query (i. e. if the query is `?redirect=/abc`, the value will be `/abc`). 
+Note, however, that this will only be updated whenever navigation occurs (via `router.push`/`router.replace` or navigating with the browser's back/forward buttons).
+
+A route can also redirect to another path instead of rendering a component:
+```js
+const router = new Router([
+  {
+    path: '/',
+    redirect: '/dashboard'
+  },
+  {
+    path: '/dashboard',
+    component: DashboardComponent
+  }
+]);
+```
+Then, if the user visits `example.com`, they will automatically be forwarded to `example.com/dashboard`.
+
+Routes can be nested inside eachother, so that components are nested when rendered.
+Given a configuration like so:
+```js
+const router = new Router([
+  {
+    path: '/',
+    component: ComponentA,
+    children: [
+      {
+        path: 'nested',
+        component: ComponentB
+      }
+    ]
+  }
+]);
+```
+and the user visits /nested, the components will be rendered like so:
+```html
+<component-a>
+  <component-b>
+  </component-b>
+</component-a>
+```
+Note that nested routes should not have a leading slash.
+
+If you need your route to conditionally match, use a route guard to determine if it should be matched:
+```js
+const router = new Router([
+  {
+    path: '/admin',
+    component: AdminComponent,
+    guard: () => user.isAdmin
+  }
+]);
+```
+This way, the route will be skipped if the `guard` function returns `false`.
+
+
+For a more in-depth and complete example of using Runway, take a look at the `/example` directory or try it in action:
+```console
+yarn run example
+```
 
 ## API
 ### `class Router`
@@ -41,7 +135,7 @@ Exported as `Router` and `default`.
 - **component?: HTMLElement | Promise<{ default: HTMLElement }> | string**
 
   The component that should be rendered.
-  Use the component's class declaration for eagerly-loaded components, or pass a function that returns a Promise (like `() => import('./component.js`) to lazy-load the component when the route matches the first time.
+  Use the component's class declaration for eagerly-loaded components, or pass a function that returns a Promise (like `() => import('./component.js`) to lazy-load the component when the route matches the first time. Note that the component needs to be the default export of the module when using `import()`.
 - **exact?: boolean**
 
   Whether or not the route should match "exactly"; `{ path: '/', exact: false }` would match any path (because any path begins with '/') while `{ path: '/' exact: true }` would *only* match '/'.
