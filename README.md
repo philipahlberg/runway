@@ -3,24 +3,35 @@ A modern router for building single-page applications with web components.
 
 ## Overview
 Runway is heavily inspired by the Vue router, so if you've used that before, you should feel right at home with Runway.
-Getting started with Runway is fairly simple. To render a component into the document body, provide the router with a record with two properties: a `path`, that when a user visits it, you want your component to be rendered, and a `component`, which is the component you want rendered:
+
+Getting started with Runway is fairly simple. At its core, Runway is a mapping of URL paths to components; you declare a path, and the component you want to be rendered when the path is visited:
 ```js
 import Router from 'runway';
+
+// 1. Import your component(s)
 import Component from './my-component.js';
 
-const router = new Router([
+// 2. Define your routes
+const routes = [
   {
-    // Trailing slashes are optional, so '/' matches both example.com and example.com/
-    path: '/',
+    path: '/foo',
     component: Component
   }
-]);
+];
 
-// Connect the router to the document body (and render, if the path matches)
+// 3. Create the router
+const router = new Router(routes);
+
+// 4. Connect the router to an element
 router.connect(document.body);
 ```
+To visit `'/foo'`, you can:
 
-You can use Express-like named parameters in paths:
+  1) Call `router.push('/foo')` (or `router.replace('/foo')`)
+  2) Use a `<router-link>` in the DOM, and click it
+
+
+If you need your route to match a pattern instead of a path, you can use Express-like named parameters in the path:
 ```js
 const router = new Router([
   {
@@ -29,7 +40,24 @@ const router = new Router([
   }
 ]);
 ```
-If the associated component has a static `properties` object (like you would use with Polymer), and it contains a key matching the parameters name, the value of the parameter in the path will automatically be passed to the component.
+Then, if the associated component has a static `properties` object, and it contains a key matching the parameters name, the value of the parameter in the path will automatically be passed to the component:
+```js
+// somewhere-else.js
+router.push('/foo');
+
+// my-component.js
+class Component extends HTMLElement {
+  static get properties() {
+    return {
+      param: String // or param: { /* ... */ }
+    }
+  }
+
+  connectedCallback() {
+    console.log(this.param === 'foo'); // true
+  }
+}
+```
 
 If you need to pass another value, like the hash or the query of the current location, you can use a `properties` function to do so:
 ```js
@@ -38,47 +66,47 @@ const router = new Router([
     path: '/login',
     component: LoginComponent,
     properties: (route) => ({
-      redirect: route.query.get('redirect')
+      foo: route.query.get('foo')
     })
   }
 ]);
 ```
 
-Here, the components' `redirect` property will be passed the value of the corresponding query (i. e. if the query is `?redirect=/abc`, the value will be `/abc`). 
+Here, the components' `foo` property will be passed the value of the corresponding query (i. e. if the query is `?foo=bar`, the value will be `bar`). 
 Note, however, that this will only be updated whenever navigation occurs (via `router.push`/`router.replace` or navigating with the browser's back/forward buttons).
 
 A route can also redirect to another path instead of rendering a component:
 ```js
 const router = new Router([
   {
-    path: '/',
-    redirect: '/dashboard'
+    path: '/foo',
+    redirect: '/bar'
   },
   {
-    path: '/dashboard',
+    path: '/bar',
     component: DashboardComponent
   }
 ]);
 ```
-Then, if the user visits `example.com`, they will automatically be forwarded to `example.com/dashboard`.
+Then, if the user visits `/foo`, they will automatically be redirected to `/bar` and the corresponding routes will be rendered instead.
 
 Routes can be nested inside eachother, so that components are nested when rendered.
 Given a configuration like so:
 ```js
 const router = new Router([
   {
-    path: '/',
+    path: '/foo',
     component: ComponentA,
     children: [
       {
-        path: 'nested',
+        path: 'bar',
         component: ComponentB
       }
     ]
   }
 ]);
 ```
-and the user visits /nested, the components will be rendered like so:
+and the user visits /foo/bar, the components will be rendered like so:
 ```html
 <component-a>
   <component-b>
@@ -87,7 +115,7 @@ and the user visits /nested, the components will be rendered like so:
 ```
 Note that nested routes should not have a leading slash.
 
-If you need your route to conditionally match, use a route guard to determine if it should be matched:
+If you need your route to conditionally match based on some external value, use a route guard to determine if it should match:
 ```js
 const router = new Router([
   {
@@ -97,10 +125,9 @@ const router = new Router([
   }
 ]);
 ```
-This way, the route will be skipped if the `guard` function returns `false`.
+This way, the route will be skipped if the guard function returns `false`.
 
-
-For a more in-depth and complete example of using Runway, take a look at the `/example` directory or try it in action:
+To see more features, take a look at the `/example` directory or try it in action:
 ```console
 yarn run example
 ```
@@ -131,7 +158,7 @@ Exported as `Router` and `default`.
 - **path: string**
 
   This is the path that the route should match.
-  Use named parameters (`/:parameter`) to match dynamic values and pass them to the component as properties, or use a wildcard (`**`) to match everything.
+  Use named parameters (`/:parameter`) to match dynamic values and pass them to the component as properties, or use a wildcard (`**`) to match anything.
 - **component?: HTMLElement | Promise<{ default: HTMLElement }> | string**
 
   The component that should be rendered.
@@ -209,6 +236,9 @@ If you're changing the target of the link during it's lifetime (e.g. if you're u
 </router-link>
 ```
 
+## Browser support
+Runway is tested against the latest version of Chrome, Firefox and Edge.
+
 ## Contributing
 
 ### Development
@@ -216,21 +246,21 @@ To start a development environment, run:
 ```console
 yarn run dev
 ```
-This spawns a headless Chrome instance to run tests against.
+This starts a headless Chrome instance that will continually run tests.
 
 ### Build
 To build the project, run:
 ```console
 yarn run build
 ```
-This creates the distribution files in the `dist/` folder.
+This creates the distribution files in the `dist/` directory.
 
 ### Test
 To test the project, run:
 ```console
 yarn run test
 ```
-This spawns a Chrome, Firefox and Edge instance to run tests against.
+This starts a Chrome, Firefox and Edge instance that will run all the tests once per browser.
 
 ### Example
 To see an example of Runway in use, run:
