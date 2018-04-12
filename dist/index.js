@@ -646,8 +646,7 @@ class RouterLink extends HTMLElement {
     get disabled() {
         return this.hasAttribute('disabled');
     }
-    attributesChangedCallback(attr, oldValue, newValue) {
-        console.log({ attr, oldValue, newValue });
+    attributeChangedCallback(attr, oldValue, newValue) {
         if (oldValue === newValue) {
             return;
         }
@@ -738,7 +737,7 @@ class RouterLink extends HTMLElement {
         this.active = this.test(decode(location.pathname));
     }
 }
-RouterLink.observedAttributes = ['disabled'];
+RouterLink.observedAttributes = ['disabled', 'to'];
 RouterLink.tagName = 'router-link';
 
 export default Router;

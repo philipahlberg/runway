@@ -2,7 +2,7 @@ import Router from './router';
 import { decode } from './utils';
 
 export class RouterLink extends HTMLElement {
-  static observedAttributes = ['disabled'];
+  static observedAttributes = ['disabled', 'to'];
   static tagName = 'router-link';
   private router: Router;
 
@@ -50,8 +50,7 @@ export class RouterLink extends HTMLElement {
     return this.hasAttribute('disabled');
   }
 
-  attributesChangedCallback(attr: string, oldValue: string, newValue: string) {
-    console.log({ attr, oldValue, newValue });
+  attributeChangedCallback(attr: string, oldValue: string, newValue: string) {
     if (oldValue === newValue) {
       return;
     }
