@@ -180,10 +180,12 @@ export class Router extends EventEmitter {
     const removals = this.elements.slice(start);
     while (removals.length > 0) {
       const element = removals.pop();
-      element!.parentElement!.removeChild(element!);
+      if (element && element.parentElement) {
+        element.parentElement.removeChild(element!);
+      }
     }
 
-    // Discard the removed elements
+    // Discard references to the removed elements
     this.elements = this.elements.slice(0, start);
 
     // Wait for any asynchronous components to load
@@ -270,7 +272,9 @@ export class Router extends EventEmitter {
   teardown() {
     while (this.elements.length > 0) {
       const element = this.elements.pop();
-      element!.parentElement!.removeChild(element!);
+      if (element && element.parentElement) {
+        element.parentElement.removeChild(element!);
+      }
     }
   }
 }
