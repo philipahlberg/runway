@@ -1,4 +1,4 @@
-import { Path } from '../src/path';
+import { Path } from '../dist/index.js';
 
 describe('Path', () => {
   describe('#matches', () => {
@@ -49,7 +49,6 @@ describe('Path', () => {
       const path = new Path('/:param');
       const params = path.parse('/123');
       expect(params.get('param')).to.equal('123');
-      expect(params.all()).to.deep.equal({ param: '123' });
     });
   
     it('can parse multiple named parameters', () => {
@@ -57,7 +56,6 @@ describe('Path', () => {
       const params = path.parse('/1/2');
       expect(params.get('a')).to.equal('1');
       expect(params.get('b')).to.equal('2');
-      expect(params.all()).to.deep.equal({ a: '1', b: '2' });
     });
   });
 });
