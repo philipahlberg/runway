@@ -13,4 +13,15 @@ parserOptions:
 settings:
   import/resolver: node
 rules:
-  import/no-named-as-default: 0
+  indent: [ 2, 'tab', { SwitchCase: 1 } ],
+  semi: [ 2, 'always' ],
+  keyword-spacing: [ 2, { before: true, after: true } ],
+  space-before-blocks: [ 2, 'always' ],
+  prefer-arrow-callback: 2
+  prefer-const: [ 2, { destructuring: 'all' } ],
+  no-this-before-super: 2
+  no-var: 2
+  no-unreachable: 2
+  valid-typeof: 2
+  quote-props: [ 2, 'as-needed' ]
+  one-var: [ 2, 'never' ]
