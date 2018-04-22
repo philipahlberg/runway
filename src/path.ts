@@ -1,4 +1,4 @@
-import { pathname, zip, dictionary } from './utils';
+import { pathname, zip } from './utils';
 
 const MATCH_ALL = '[^/]*';
 
@@ -81,14 +81,13 @@ export class Path {
    */
   transfer(from: string, to: string): string {
     const values = (this.pattern.exec(from) || []).slice(1);
-    let transferred = to;
     let i = values.length;
     while (i--) {
-      transferred = transferred
+      to = to
         .replace(':' + this.keys[i], values[i]);
     }
 
-    return transferred;
+    return to;
   }
 }
 
@@ -102,9 +101,5 @@ export class Parameters extends Map<string, string> {
     const values = (pattern.exec(path) || []).slice(1);
     super(zip(keys, values));
     this.path = path;
-  }
-
-  all(): Dictionary<string> {
-    return dictionary(Array.from(this.entries()));
   }
 }
