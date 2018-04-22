@@ -8,25 +8,24 @@ export interface Options {
 type PopstateListener = (to: string) => void;
 
 const h = history;
-const onpop = Symbol('onpop');
 
 export default class History {
   onPopstate: PopstateListener;
 
   constructor(listener: PopstateListener) {
     this.onPopstate = listener;
-    this[onpop] = this[onpop].bind(this);
+    this.onpop = this.onpop.bind(this);
   }
 
   connect() {
-    window.addEventListener('popstate', this[onpop]);
+    window.addEventListener('popstate', this.onpop);
   }
 
   disconnect() {
-    window.removeEventListener('popstate', this[onpop]);
+    window.removeEventListener('popstate', this.onpop);
   }
 
-  [onpop]() {
+  onpop() {
     const to = decode(location.pathname);
     this.onPopstate(to);
   }
