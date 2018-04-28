@@ -1,86 +1,52 @@
-import Path, { Parameters } from './path';
-import Query from './query';
+import Query from '@philipahlberg/query';
+import Path from '@philipahlberg/path';
+import { empty, always } from '@philipahlberg/scratchpad';
 import {
   normalize,
-  decode,
-  split,
-  always,
-  empty,
-  isFunction,
-  isModule
+  decode
 } from './utils';
-
-interface Module {
-  default: HTMLElement;
-}
-
-type Component = AsyncComponent | HTMLElement;
-type AsyncComponent = () => Promise<HTMLElement | Module>;
-type Guard = () => boolean;
-type Properties = (snapshot: Snapshot) => Dictionary<any>;
-
-export interface Record {
-  path: string;
-  component?: Component | string;
-  exact?: boolean;
-  redirect?: string;
-  slot?: string;
-  guard?: Guard;
-  properties?: Properties;
-  children?: Record[];
-}
-
-interface Snapshot {
-  parameters: Parameters;
-  query: Query;
-  hash: string;
-  matched: string;
-}
+import {
+  Component,
+  ComponentFn,
+  GuardFn,
+  PropertiesFn,
+  Record,
+  Snapshot
+} from './types';
 
 export class Route extends Path {
-  private static cache = new WeakMap();
+  private static cache = new WeakMap<any, HTMLElement>();
   path: string;
   exact: boolean;
   component: Component;
   redirect?: string;
   slot?: string;
-  guard: Guard;
-  properties: Properties;
+  guard: GuardFn;
+  properties: PropertiesFn;
   children: Route[];
 
-  static async import(identifier: Component): Promise<HTMLElement> {
-    if (isFunction(identifier)) {
-      // If it's a function, call it
-      let called = (identifier as AsyncComponent)();
-      // If it's a promise, resolve it
-      let resolved = await Promise.resolve(called);
-      // If the promise resolved to a module, assume
-      // the constructor is the default export
-      // Otherwise, assume the promise resolved
-      // to a constructor
-      if (isModule(resolved)) {
-        return (resolved as Module).default;
+  static async import(component: Component): Promise<HTMLElement> {
+    if (typeof component !== 'function') {
+      throw new TypeError('Component must be a class or function.');
+    }
+
+    if (HTMLElement.isPrototypeOf(component)) {
+      return component as HTMLElement;
+    } else {
+      const called = (component as ComponentFn)();
+      const resolved = await Promise.resolve(called);
+      if (resolved.default) {
+        return resolved.default;
       } else {
         return resolved as HTMLElement;
       }
-    } else {
-      // If it's not a function,
-      // assume it's a constructor
-      return identifier as HTMLElement;
     }
   }
 
   constructor(record: Record) {
-    let {
-      path,
-      component,
-      exact,
-      redirect,
-      slot,
-      guard,
-      properties,
-      children
-    } = record;
+    let { path, component, exact,
+      redirect, slot, guard,
+      properties, children } = record;
 
     // Path should be exact if the route
     // does not have any children,
@@ -109,31 +75,27 @@ export class Route extends Path {
   }
 
   async import(): Promise<HTMLElement> {
-    if (!isFunction(this.component)) {
-      return this.component as HTMLElement;
-    } else if (Route.cache.has(this.component)) {
-      return Route.cache.get(this.component);
+    const cache = Route.cache;
+    const component = this.component;
+
+    if (HTMLElement.isPrototypeOf(component)) {
+      return component as HTMLElement;
+    } else if (cache.has(component)) {
+      return cache.get(component)!;
     } else {
-      const ctor = await Route.import(this.component);
-      Route.cache.set(this.component, ctor);
+      const ctor = await Route.import(component);
+      cache.set(component, ctor);
       return ctor;
     }
   }
 
-  snapshot(location: string | Location): Snapshot {
-    const {
-      pathname,
-      search,
-      hash
-    } = typeof location === 'string'
-      ? split(location)
-      : location;
-
+  snapshot(source: Location | URL): Snapshot {
+    const { pathname, search, hash } = source;
     return {
-      parameters: this.parse(decode(pathname)),
+      parameters: this.toMap(decode(pathname)),
       query: Query.parse(decode(search)),
       matched: this.matched(decode(pathname)),
-      hash
+      hash: hash.substring(1)
     };
   }
 }
@@ -149,5 +111,3 @@ function createChildRoute(record: Record, parent: Route): Route {
   }
   return new Route(record);
 }
-
-export default Route;

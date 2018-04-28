@@ -1,13 +1,13 @@
-export type Listener = (detail?: any) => void;
+import { EventEmitterListener } from './types';
 
-export default class EventEmitter {
-  map: Map<string, Set<Listener>>;
+export class EventEmitter {
+  map: Map<string, Set<EventEmitterListener>>;
 
   constructor() {
     this.map = new Map();
   }
 
-  on(type: string, listener: Listener) {
+  on(type: string, listener: EventEmitterListener) {
     let listeners;
     if (!this.map.has(type)) {
       listeners = new Set();
@@ -18,7 +18,7 @@ export default class EventEmitter {
     listeners!.add(listener);
   }
 
-  off(type: string, listener: Listener) {
+  off(type: string, listener: EventEmitterListener) {
     if (!this.map.has(type)) {
       return;
     }

@@ -1,9 +1,8 @@
-import { Route } from '../src/route';
-import {
-  SimpleComponent,
-  ParamComponent,
-  AsyncComponent
-} from './components.js';
+import { Route } from './lib.js';
+
+const SimpleComponent = customElements.get('simple-component');
+const ParamComponent = customElements.get('param-component');
+const AsyncComponent = () => Promise.resolve(SimpleComponent);
 
 describe('Route', () => {
   describe('.import', () => {
@@ -41,42 +40,48 @@ describe('Route', () => {
 
   describe('#import', async () => {
     it('resolves an ordinary component', async () => {
-      const route = new Route({ component: SimpleComponent });
+      const route = new Route({
+        path: '/',
+        component: SimpleComponent
+      });
       const Component = await route.import();
       expect(Component).to.equal(SimpleComponent);
     });
 
     it('resolves a string', async () => {
-      const route = new Route({ component: 'simple-component' });
+      const route = new Route({
+        path: '/',
+        component: 'simple-component'
+      });
       const Component = await route.import();
       expect(Component).to.equal(SimpleComponent);
     });
 
     it('resolves an async component', async () => {
-      const route = new Route({ component: AsyncComponent });
+      const route = new Route({
+        path: '/',
+        component: AsyncComponent
+      });
       const Component = await route.import();
       expect(Component).to.equal(SimpleComponent);
     });
 
-    // Pending karma-webpack issue
-    // https://github.com/webpack-contrib/karma-webpack/issues/316
-    it.skip('resolves an imported component', async () => {
-      const route = new Route({
-        path: '/',
-        component: () => import('./import.js')
-      });
+    // it('resolves an imported component', async () => {
+    //   const route = new Route({
+    //     path: '/',
+    //     component: () => import('./import.js')
+    //   });
 
-      const Component = await route.import();
-      expect(Component).to.exist;
-      expect(Component.prototype).to.equal(HTMLElement);
-    });
+    //   const Component = await route.import();
+    //   expect(customElements.get('imported-component')).to.equal(Component);
+    // });
   });
 
   describe('#snapshot', () => {
     it('provides key details of the route in relation to the given path', () => {
       const route = new Route({ path: '/:param' });
       const { parameters, query, hash, matched } = route.snapshot(
-        '/123?q=456#hash'
+        new URL('/123?q=456#hash', location.href)
       );
 
       expect(parameters.get('param')).to.equal('123');

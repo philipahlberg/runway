@@ -1,6 +1,5 @@
-export class SimpleComponent extends HTMLElement {}
-
-export class ParamComponent extends HTMLElement {
+customElements.define('simple-component', class extends HTMLElement {});
+customElements.define('param-component', class extends HTMLElement {
   static get properties() {
     return {
       param: {
@@ -8,9 +7,4 @@ export class ParamComponent extends HTMLElement {
       }
     }
   }
-}
-
-export const AsyncComponent = () => Promise.resolve(SimpleComponent);
-
-customElements.define('simple-component', SimpleComponent);
-customElements.define('param-component', ParamComponent);
+});

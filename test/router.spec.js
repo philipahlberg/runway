@@ -1,9 +1,8 @@
-import Router from '../src/index';
-import {
-  SimpleComponent,
-  ParamComponent,
-  AsyncComponent
-} from './components.js';
+import { Router } from './lib.js';
+
+const SimpleComponent = customElements.get('simple-component');
+const ParamComponent = customElements.get('param-component');
+const AsyncComponent = () => Promise.resolve(SimpleComponent);
 
 const div = () => document.createElement('div');
 
@@ -11,7 +10,7 @@ describe('Router', () => {
   describe('constructor', () => {
     it('converts records to routes', () => {
       const router = new Router([
-        { path: '/a' }
+        { path: '/a', component: SimpleComponent }
       ]);
       expect(router.routes).to.be.instanceof(Array);
     });
@@ -199,7 +198,7 @@ describe('Router', () => {
       await router.push('/?q=123');
 
       expect(outlet.firstChild.param).to.equal('123');
-    })
+    });
 
     it('nests components from nested routes', async () => {
       const router = new Router([{

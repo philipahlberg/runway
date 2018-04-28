@@ -1,15 +1,9 @@
 import { EMPTY, decode } from './utils';
-
-export interface Options {
-  data: any;
-  title: string;
-}
-
-type PopstateListener = (to: string) => void;
+import { PopstateListener, NavigationOptions } from './types';
 
 const h = history;
 
-export default class History {
+export class History {
   onPopstate: PopstateListener;
 
   constructor(listener: PopstateListener) {
@@ -30,12 +24,12 @@ export default class History {
     this.onPopstate(to);
   }
 
-  push(path: string, options: Options = EMPTY) {
+  push(path: string, options: NavigationOptions = EMPTY) {
     const { data, title } = options;
     h.pushState(data, title, path);
   }
 
-  replace(path: string, options: Options = EMPTY) {
+  replace(path: string, options: NavigationOptions = EMPTY) {
     const { data, title } = options;
     h.replaceState(data, title, path);
   }

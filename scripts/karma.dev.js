@@ -1,12 +1,30 @@
-const webpack = require('./webpack.dev.js');
+const resolver = require('rollup-plugin-node-resolve');
+const typescript = require('rollup-plugin-typescript');
+const tsc = require('typescript');
+
+const rollup = {
+  output: {
+    format: 'es'
+  },
+  plugins: [
+    typescript({ typescript: tsc }),
+    resolver()
+  ]
+};
 
 module.exports = (config) => {
   config.set({
+    basePath: '../',
     frameworks: ['mocha', 'chai'],
-    files: ['../test/index.js'],
+    files: [
+      { pattern: 'test/lib.js', type: 'module', watched: false },
+      { pattern: 'test/index.js', type: 'module', watched: false }
+    ],
     preprocessors: {
-      '../test/index.js': ['webpack', 'sourcemap']
+      'test/lib.js': ['rollup'],
+      'test/index.js': ['rollup']
     },
+    rollupPreprocessor: rollup,
     browsers: ['ChromeHeadless'],
     reporters: ['progress'],
     port: 1234,
@@ -14,9 +32,8 @@ module.exports = (config) => {
     logLevel: config.LOG_WARN,
     autoWatch: true,
     singleRun: false,
-    webpack,
-    webpackMiddleware: {
-      noInfo: true
-    }
+    // https://github.com/karma-runner/karma/pull/2834#issuecomment-376854730
+    customContextFile: 'test/context.html',
+    customDebugFile: 'test/debug.html'
   });
 };

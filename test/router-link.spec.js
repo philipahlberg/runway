@@ -1,5 +1,4 @@
-import { Router } from '../src/router';
-import { RouterLink } from '../src/router-link';
+import { Router, RouterLink } from './lib.js';
 
 RouterLink.install();
 
@@ -10,9 +9,8 @@ const a = (href) => {
 };
 
 const div = () => document.createElement('div');
-
-const connect = (el) => el.connectedCallback();
-const disconnect = (el) => el.disconnectedCallback();
+const connect = (el) => document.body.appendChild(el);
+const disconnect = (el) => document.body.removeChild(el);
 const push = (path) => history.pushState(null, null, path);
 
 describe('<router-link>', async () => {
@@ -40,18 +38,30 @@ describe('<router-link>', async () => {
     expect(link.active).to.be.true;
   });
 
-  // Does a full page reload for some reason.
-  // Skipped until the cause has been found.
-  it.skip('intercepts clicks', async () => {
+  it('triggers navigation', async () => {
     const link = new RouterLink();
-    const anchor = a('/abc');
     link.appendChild(a('/abc'));
     connect(link);
 
-    anchor.click();
+    link.click();
     await Promise.resolve();
 
+    expect(location.pathname).to.equal('/abc');
     expect(link.active).to.be.true;
+  });
+
+  // Does a full page reload for some reason.
+  // Skipped until the cause has been found.
+  it('intercepts clicks', async () => {
+    const link = new RouterLink();
+    link.appendChild(a('/abc'));
+    connect(link);
+
+    // anchor.dispatchEvent(new MouseEvent('click', {
+    //   button: 0
+    // }));
+
+    // expect(link.active).to.be.true;
   });
 
   it('can be configured to match exactly', async () => {

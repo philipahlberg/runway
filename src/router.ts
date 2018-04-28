@@ -1,7 +1,8 @@
-import EventEmitter from './event-emitter';
-import Route, { Record } from './route';
-import History, { Options } from './history';
-import { decode, pathname } from './utils';
+import { EventEmitter } from './event-emitter';
+import { Route } from './route';
+import { History } from './history';
+import { decode } from './utils';
+import { Record, Constructor, NavigationOptions } from './types';
 
 export interface SearchResult {
   matched: Route[];
@@ -73,7 +74,7 @@ export class Router extends EventEmitter {
   /**
    * Push a history entry onto the stack.
    */
-  push(to: string, options?: Options): Promise<void> {
+  push(to: string, options?: NavigationOptions): Promise<void> {
     to = decode(to);
     const { matched, path } = this.match(to);
     this.history.push(path, options);
@@ -84,7 +85,7 @@ export class Router extends EventEmitter {
   /**
    * Replace the topmost entry in the history stack.
    */
-  replace(to: string, options?: Options): Promise<void> {
+  replace(to: string, options?: NavigationOptions): Promise<void> {
     to = decode(to);
     const { matched, path } = this.match(to);
     this.history.replace(path, options);
@@ -111,7 +112,7 @@ export class Router extends EventEmitter {
       matched.push(route);
       if (route.redirect) {
         // transfer any matched parameters
-        const from = route.matched(pathname(path));
+        const from = route.matched(path);
         const to = route.redirect;
         const redirected = route.transfer(from, to);
         // and start over
@@ -148,9 +149,7 @@ export class Router extends EventEmitter {
       return;
     }
 
-    // Importing early in case both network
-    // and device is slow, but not awaiting
-    // it just yet.
+    // Importing early, but not awaiting, in case network is slow
     const load = Promise.all(matched.map(route => route.import()));
 
     // Find the index at which the matched routes

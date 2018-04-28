@@ -1,7 +1,7 @@
 import resolve from 'rollup-plugin-node-resolve';
 import minify from 'rollup-plugin-uglify';
-import ts from 'rollup-plugin-typescript';
-import typescript from 'typescript';
+import typescript from 'rollup-plugin-typescript';
+import tsc from 'typescript';
 
 export default [
   {
@@ -11,7 +11,9 @@ export default [
       format: 'es'
     },
     plugins: [
-      ts({typescript}),
+      typescript({
+        typescript: tsc
+      }),
       resolve()
     ]
   },
@@ -23,9 +25,13 @@ export default [
       sourcemap: true
     },
     plugins: [
-      ts({typescript}),
+      typescript({
+        typescript: tsc
+      }),
       resolve(),
-      minify()
+      minify({
+        toplevel: true
+      })
     ]
   }
 ]
