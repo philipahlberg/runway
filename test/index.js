@@ -1,5 +1,5 @@
 import '@webcomponents/custom-elements';
 import './components.js';
-import './route.spec.js';
-import './router-link.spec.js';
-import './router.spec.js';
+import './Route.spec.js';
+import './RouterLink.spec.js';
+import './Router.spec.js';
