@@ -1,10 +1,7 @@
 import Query from '@philipahlberg/query';
 import Path from '@philipahlberg/path';
 import { empty, always } from '@philipahlberg/scratchpad';
-import {
-  normalize,
-  decode
-} from './utils';
+import { normalize, decode } from './utils';
 import {
   Component,
   ComponentFn,

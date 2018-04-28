@@ -1,4 +1,4 @@
-import Router from './router';
+import { Router } from './Router';
 import { decode } from './utils';
 
 export class RouterLink extends HTMLElement {

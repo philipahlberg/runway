@@ -1,6 +1,6 @@
-import { EventEmitter } from './event-emitter';
-import { Route } from './route';
-import { History } from './history';
+import { EventEmitter } from './EventEmitter';
+import { Route } from './Route';
+import { History } from './History';
 import { decode } from './utils';
 import { Record, Constructor, NavigationOptions } from './types';
 
