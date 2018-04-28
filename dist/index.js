@@ -31,6 +31,288 @@ class EventEmitter {
     }
 }
 
+class Query extends Map {
+    static from(object) {
+        return new Query(Object.entries(object));
+    }
+    static parse(string) {
+        if (/\?/.test(string)) {
+            string = string.replace(/^.*\?/, '');
+        }
+        if (/#/.test(string)) {
+            string = string.replace(/#.*$/, '');
+        }
+        let entries = [];
+        if (string !== '') {
+            entries = string.split('&')
+                .map((substring) => substring.split('='));
+        }
+        return new Query(entries);
+    }
+    toString() {
+        return Array.from(this.entries())
+            .map(entry => entry.join('='))
+            .join('&');
+    }
+}
+
+/**
+ * Matches anything until the next '/', '?' or '#'.
+ * Replacement for wildcards in path declarations when building a RegExp.
+ */
+const MATCH_ALL = '[^/?#]*';
+/**
+ * Captures anything until the next '/', '?' or '#'.
+ * Replacement for parameters in path declarations when building a RegExp.
+ */
+const CATCH_ALL = '([^/?#]+)';
+/**
+ * Matches an optional trailing '/', if it is not followed by anything.
+ * Appended to the end of path declarations when building a RegExp.
+ *
+ * Notes:
+ * - Does nothing on its own
+ * - Does nothing without a trailing '$'
+ *
+ * @example
+ * const pattern = new RegExp('^/abc' + MATCH_TRAILING_SLASH + '$');
+ * pattern.test('/abc'); // => true
+ * pattern.test('/abc/'); // => true
+ * pattern.test('/abc/def'); // => false
+ *
+ */
+const MATCH_TRAILING_SLASH = '(?:[/]?(?=$))?';
+/**
+ * Matches an optional query string.
+ */
+const MATCH_TRAILING_QUERY = '(?:\\?.*)?';
+/**
+ * Matches an optional hash string.
+ */
+const MATCH_TRAILING_HASH = '(?:#.*)?';
+/**
+ * Matches '**'.
+ *
+ * Determines where to swap in a match-all pattern.
+ */
+const WILDCARD_PATTERN = /\*\*/g;
+/**
+ * Matches ':param' and captures 'param'.
+ *
+ * Determines where to swap in a catch-all pattern, or
+ * extracts parameter names from a path.
+ */
+const PARAMETER_PATTERN = /:([^\/?#]+)/g;
+
+/**
+ * Extract the keys in a path declaration.
+ * @example
+ * parse('/:a/:b/:c'); // => ['a', 'b', 'c']
+ *
+ * @param path A path declaration
+ */
+const parse = (path) => {
+    let keys = [];
+    let match;
+    while ((match = PARAMETER_PATTERN.exec(path)) != null) {
+        keys.push(match[1]);
+    }
+    return keys;
+};
+
+/**
+ * Create a regular expression from a path with (optional) encoded parameters in it.
+ * `exact` determines if the resulting expression should match
+ * any superset of the given path or only match equal segment-length paths.
+ *
+ * @example
+ * // not exact
+ * compile('/:a').test('/b'); // => true
+ * compile('/:a').test('/a/b'); // => true
+ * // exact
+ * compile('/:a', true).test('/a'); // => true
+ * compile('/:a', true).test('/a/b'); // => false
+ *
+ * @param path A path declaration
+ * @param exact If `true`, the resulting expression will only match
+ * 1:1 (instead of matching any superset of the given path).
+ */
+const compile = (path, exact = false) => (new RegExp('^' +
+    path
+        // Replace '**' with a matching group
+        .replace(WILDCARD_PATTERN, MATCH_ALL)
+        // Replace ':key' with a catching group
+        .replace(PARAMETER_PATTERN, CATCH_ALL)
+    // Match an optional trailing slash
+    + MATCH_TRAILING_SLASH
+    // If exact, only match completely
+    + (exact
+        ? MATCH_TRAILING_QUERY + MATCH_TRAILING_HASH + '$'
+        : ''), 'i'));
+
+/**
+ * Retrieve the values embedded in a string using a
+ * regular expression obtained from `compile`.
+ *
+ * @example
+ * const pattern = compile('/:a');
+ * execute(pattern, '/value'); // => ['value']
+ *
+ * @param pattern The pattern returned from `compile`
+ * @param path The live path
+ */
+const execute = (pattern, path) => ((pattern.exec(path) || []).slice(1));
+
+const zip = (a, b) => (a.map((v, i) => [v, b[i]]));
+/**
+ * Convert an array of keys and an array of values into a Map.
+ *
+ * @example
+ * const keys = parse('/:a/:b');
+ * const pattern = compile('/:a/:b');
+ * const values = execute(pattern, '/some/path');
+ * map(keys, values); // => Map {'a' => 'some', 'b' => 'path'}
+ *
+ * @param keys The keys returned from `parse`
+ * @param values The values returned from `execute`
+ */
+const map = (keys, values) => (new Map(zip(keys, values)));
+
+/**
+ * Convert an array of keys and an array of values into a plain object.
+ * @example
+ * const keys = parse('/:a/:b');
+ * const pattern = compile('/:a/:b');
+ * const values = execute(pattern, '/some/path');
+ * object(keys, values); // => { a: 'some', b: 'path' }
+ *
+ * @param keys The keys returned from `parse`
+ * @param values The values returned from `execute`
+ */
+const object = (keys, values) => (keys.reduce((acc, key, i) => {
+    acc[key] = values[i];
+    return acc;
+}, {}));
+
+class Path {
+    constructor(path, exact = false) {
+        this.keys = parse(path);
+        this.pattern = compile(path, exact);
+    }
+    /**
+     * Test if the Path matches the given string.
+     *
+     * @example
+     * const path = new Path('/:a/:b/:c');
+     * path.matches('/1/2/3'); // => true
+     * path.matches('/1/2'); // => false
+     * path.matches('/1/2/3/4'); // => true
+     *
+     * @param string The string to test against
+     */
+    matches(string) {
+        return this.pattern.test(string);
+    }
+    /**
+     * Extract the matched part of the given string according to this Path.
+     *
+     * @example
+     * const path = new Path('/:a/:b/:c');
+     * path.matched('/1/2/3'); // => '/1/2/3'
+     * path.matched('/1/2/3/4'); // => '1/2/3'
+     *
+     * @param string The string to match against
+     */
+    matched(string) {
+        const matched = this.pattern.exec(string);
+        return matched && matched[0] || '';
+    }
+    /**
+     * Extract the values in the given string according to this Path's
+     * initial declaration.
+     *
+     * @example
+     * const path = new Path('/:a/:b/:c');
+     * path.values('/1/2/3'); // => ['1', '2', '3']
+     *
+     * @param string The string to extract values from
+     */
+    values(string) {
+        return execute(this.pattern, string);
+    }
+    /**
+     * Extract the values in the given string, and combine them
+     * with the keys for this Path to create a Map instance.
+     *
+     * @example
+     * const path = new Path('/:a/:b/:c');
+     * path.toMap('/1/2/3'); // => Map { 'a' => '1', 'b' => '2', 'c' => '3' }
+     *
+     * @param string The string to extract values from
+     */
+    toMap(string) {
+        const values = this.values(string);
+        return map(this.keys, values);
+    }
+    /**
+     * Extract the values in the given string, and combine them
+     * with the keys for this Path to create a simple object.
+     *
+     * @example
+     * const path = new Path('/:a/:b/:c');
+     * path.toMap('/1/2/3'); // => { a: '1', b: '2', c: '3' }
+     *
+     * @param string The string to extract values from
+     */
+    toObject(string) {
+        const values = this.values(string);
+        return object(this.keys, values);
+    }
+    /**
+     * Transfer parameters in a string (`source`) according to the
+     * Path declaration to construct another path (`target`).
+     * @example
+     * const path = new Path('/:a/:b/:c');
+     * path.transfer('/1/2/3', '/:a'); // => '/1'
+     * path.transfer('/1/2/3', '/:b'); // => '/2'
+     * path.transfer('/1/2/3', '/:c/:b/:a/abc'); // => '/3/2/1/abc'
+     *
+     * @param source The string that contains values
+     * @param target The path that will receive values
+     */
+    transfer(source, target) {
+        const values = this.values(source);
+        let i = values.length;
+        while (i--) {
+            target = target
+                .replace(':' + this.keys[i], values[i]);
+        }
+        return target;
+    }
+}
+
+/**
+ * Convert 'PascalCase' or 'camelCase' to 'dash-case'.
+ * @param str A PascalCase og camelCase string
+ */
+function empty() {
+    return Object.create(null);
+}
+/**
+ * Shorthand for `Object.freeze`.
+ * @param object
+ */
+function freeze(object) {
+    return Object.freeze(object);
+}
+/**
+ * Always returns `true`.
+ */
+function always() {
+    return true;
+}
+const EMPTY = freeze(empty());
+
 /**
  * Append a leading slash, and remove all excess slashes.
  */
@@ -40,226 +322,19 @@ function normalize(path) {
 /**
  * Shorthand for `decodeURIComponent`
  */
-function decode(str) {
+function decode$1(str) {
     return decodeURIComponent(str);
-}
-/**
- * Split the pathname, search (query) and hash of a path.
- */
-function split(path) {
-    let temp = path.split('#');
-    const hash = temp[1] || '';
-    temp = (temp[0] || '').split('?');
-    const search = temp[1] || '';
-    const pathname = temp[0] || '';
-    return {
-        pathname,
-        search,
-        hash
-    };
-}
-/**
- * Extract the pathname of a path (i. e. excluding the search and hash).
- */
-function pathname(path) {
-    return (path.split('#')[0] || '').split('?')[0];
-}
-/**
- * Extract the search (query) of a path.
- */
-function search(path) {
-    path = (path.split('#')[0] || '');
-    if (/\?/.test(path)) {
-        return path.split('?')[1] || '';
-    }
-    else {
-        return path;
-    }
-}
-/**
- * Determines if the given object is a callable function.
- * An ES2015 class will return false, while ordinary functions,
- * arrow functions, generator functions and async functions return true.
- */
-function isFunction(object) {
-    if (!(typeof object === 'function')) {
-        return false;
-    }
-    /**
-     * Values for `hasOwnProperty` on functions:
-     *
-     *           | Class | Ordinary | Arrow | Async | Generator |
-     * ---------------------------------------------------------|
-     * arguments | false |   true   | false | false |   false   |
-     * prototype | true  |   true   | false | false |   true    |
-     *
-     */
-    const tag = object[Symbol.toStringTag];
-    if (tag === 'AsyncFunction' || tag === 'GeneratorFunction') {
-        return true;
-    }
-    else {
-        // Ordinary functions have an `arguments` property, which classes do not.
-        const isNormalFunction = object.hasOwnProperty('arguments');
-        // Arrow functions do not have a `prototype` property, which classes do.
-        const isArrowFunction = !object.hasOwnProperty('prototype');
-        return isNormalFunction || isArrowFunction;
-    }
-}
-/**
- * Determine if the given object is an ES module (the return value of `import()`)
- * or a shim (like `require()`)
- */
-function isModule(object) {
-    return object[Symbol.toStringTag] === 'Module' || object.__esModule;
 }
 /**
  * Shorthand for `Object.freeze`.
  */
-function freeze(object) {
+function freeze$1(object) {
     return Object.freeze(object);
-}
-/**
- * Shorthand for `Object.create(null)`.
- */
-function empty() {
-    return Object.create(null);
-}
-/**
- * Always returns `true`.
- */
-function always() {
-    return true;
-}
-/**
- * Combine two arrays to an array of tuples.
- */
-function zip(a, b) {
-    return a.map((v, i) => [v, b[i]]);
-}
-/**
- * Convert an array of tuples to an object in which each key
- * is the first element of the tuple and the value is the second element of the tuple.
- */
-function dictionary(pairs) {
-    let index = -1;
-    const length = pairs.length;
-    const result = {};
-    while (++index < length) {
-        const pair = pairs[index];
-        result[pair[0]] = pair[1];
-    }
-    return result;
 }
 /**
  * A frozen object with no prototype chain.
  */
-const EMPTY = freeze(Object.create(null));
-
-const MATCH_ALL = '[^/]*';
-const CATCH_ALL = '([^/]+)';
-const PARAMETER_PATTERN = /:([^\/]+)/;
-// optional trailing slash
-// only matches the slash if nothing follows
-const MATCH_TRAILING_SLASH = '(?:[\/]?(?=$))?';
-// implements '**' as a wildcard
-const WILDCARD_PATTERN = /\*\*/g;
-class Path {
-    constructor(path = '', exact = false) {
-        path = pathname(path);
-        this.path = path;
-        this.exact = exact;
-        // replace any wildcards with
-        // their corresponding expression
-        let temporary = path.replace(WILDCARD_PATTERN, MATCH_ALL);
-        let match;
-        let keys = [];
-        // convert :param to a catch-all group
-        // and save the keys
-        while ((match = PARAMETER_PATTERN.exec(temporary)) != null) {
-            // match[0] is the entire declaration, e. g. ':param'
-            temporary = temporary.replace(match[0], CATCH_ALL);
-            // match[1] is the name of the parameter, e. g. 'param'
-            keys.push(match[1]);
-        }
-        if (!temporary.endsWith('/')) {
-            temporary += MATCH_TRAILING_SLASH;
-        }
-        temporary = exact ? `^${temporary}$` : `^${temporary}`;
-        const pattern = new RegExp(temporary, 'i');
-        this.keys = keys;
-        this.pattern = pattern;
-    }
-    /**
-     * Convenience function that mirrors RegExp.test
-     */
-    matches(path) {
-        return this.pattern.test(pathname(path));
-    }
-    /**
-     * Find the matched part of the given path.
-     */
-    matched(path) {
-        let matched = this.pattern.exec(pathname(path));
-        return matched && matched[0] || '';
-    }
-    /**
-     * Parse a path string for parameter values.
-     */
-    parse(path) {
-        return new Parameters(path, this.pattern, this.keys);
-    }
-    /**
-     * Transfer matched parameters in the given url to
-     * the target path, filling in named parameters in if they exist.
-     */
-    transfer(from, to) {
-        const values = (this.pattern.exec(from) || []).slice(1);
-        let transferred = to;
-        let i = values.length;
-        while (i--) {
-            transferred = transferred
-                .replace(':' + this.keys[i], values[i]);
-        }
-        return transferred;
-    }
-}
-class Parameters extends Map {
-    constructor(path, pattern, keys) {
-        path = pathname(path);
-        const values = (pattern.exec(path) || []).slice(1);
-        super(zip(keys, values));
-        this.path = path;
-    }
-    all() {
-        return dictionary(Array.from(this.entries()));
-    }
-}
-
-class Query extends Map {
-    static from(object) {
-        return new Query(Object.entries(object));
-    }
-    static parse(string) {
-        const queryString = search(string);
-        let entries = [];
-        if (queryString !== '') {
-            entries = queryString.split('&')
-                .map((substring) => substring.split('='));
-        }
-        return new Query(entries);
-    }
-    all() {
-        return dictionary(Array.from(this.entries()));
-    }
-    toString() {
-        let string = '';
-        for (const [key, value] of this) {
-            string += `&${key}=${value}`;
-        }
-        return string.substring(1);
-    }
-}
+const EMPTY$1 = freeze$1(Object.create(null));
 
 class Route extends Path {
     constructor(record) {
@@ -284,51 +359,46 @@ class Route extends Path {
         this.properties = properties || empty;
         this.children = (children || []).map(child => createChildRoute(child, this));
     }
-    static async import(identifier) {
-        if (isFunction(identifier)) {
-            // If it's a function, call it
-            let called = identifier();
-            // If it's a promise, resolve it
-            let resolved = await Promise.resolve(called);
-            // If the promise resolved to a module, assume
-            // the constructor is the default export
-            // Otherwise, assume the promise resolved
-            // to a constructor
-            if (isModule(resolved)) {
+    static async import(component) {
+        if (typeof component !== 'function') {
+            throw new TypeError('Component must be a class or function.');
+        }
+        if (HTMLElement.isPrototypeOf(component)) {
+            return component;
+        }
+        else {
+            const called = component();
+            const resolved = await Promise.resolve(called);
+            if (resolved.default) {
                 return resolved.default;
             }
             else {
                 return resolved;
             }
         }
-        else {
-            // If it's not a function,
-            // assume it's a constructor
-            return identifier;
-        }
     }
     async import() {
-        if (!isFunction(this.component)) {
-            return this.component;
+        const cache$$1 = Route.cache;
+        const component = this.component;
+        if (HTMLElement.isPrototypeOf(component)) {
+            return component;
         }
-        else if (Route.cache.has(this.component)) {
-            return Route.cache.get(this.component);
+        else if (cache$$1.has(component)) {
+            return cache$$1.get(component);
         }
         else {
-            const ctor = await Route.import(this.component);
-            Route.cache.set(this.component, ctor);
+            const ctor = await Route.import(component);
+            cache$$1.set(component, ctor);
             return ctor;
         }
     }
-    snapshot(location) {
-        const { pathname: pathname$$1, search: search$$1, hash: hash$$1 } = typeof location === 'string'
-            ? split(location)
-            : location;
+    snapshot(source) {
+        const { pathname, search, hash } = source;
         return {
-            parameters: this.parse(decode(pathname$$1)),
-            query: Query.parse(decode(search$$1)),
-            matched: this.matched(decode(pathname$$1)),
-            hash: hash$$1
+            parameters: this.toMap(decode$1(pathname)),
+            query: Query.parse(decode$1(search)),
+            matched: this.matched(decode$1(pathname)),
+            hash: hash.substring(1)
         };
     }
 }
@@ -347,27 +417,26 @@ function createChildRoute(record, parent) {
 }
 
 const h = history;
-const onpop = Symbol('onpop');
 class History {
     constructor(listener) {
         this.onPopstate = listener;
-        this[onpop] = this[onpop].bind(this);
+        this.onpop = this.onpop.bind(this);
     }
     connect() {
-        window.addEventListener('popstate', this[onpop]);
+        window.addEventListener('popstate', this.onpop);
     }
     disconnect() {
-        window.removeEventListener('popstate', this[onpop]);
+        window.removeEventListener('popstate', this.onpop);
     }
-    [onpop]() {
-        const to = decode(location.pathname);
+    onpop() {
+        const to = decode$1(location.pathname);
         this.onPopstate(to);
     }
-    push(path, options = EMPTY) {
+    push(path, options = EMPTY$1) {
         const { data, title } = options;
         h.pushState(data, title, path);
     }
-    replace(path, options = EMPTY) {
+    replace(path, options = EMPTY$1) {
         const { data, title } = options;
         h.replaceState(data, title, path);
     }
@@ -395,7 +464,7 @@ class Router extends EventEmitter {
     async connect(root) {
         this.isConnected = true;
         this.root = root;
-        const to = decode(location.pathname);
+        const to = decode$1(location.pathname);
         const { matched, path } = this.match(to);
         this.history.connect();
         this.history.replace(path);
@@ -430,7 +499,7 @@ class Router extends EventEmitter {
      * Push a history entry onto the stack.
      */
     push(to, options) {
-        to = decode(to);
+        to = decode$1(to);
         const { matched, path } = this.match(to);
         this.history.push(path, options);
         this.emit('push');
@@ -440,7 +509,7 @@ class Router extends EventEmitter {
      * Replace the topmost entry in the history stack.
      */
     replace(to, options) {
-        to = decode(to);
+        to = decode$1(to);
         const { matched, path } = this.match(to);
         this.history.replace(path, options);
         this.emit('replace');
@@ -463,7 +532,7 @@ class Router extends EventEmitter {
             matched.push(route);
             if (route.redirect) {
                 // transfer any matched parameters
-                const from = route.matched(pathname(path));
+                const from = route.matched(path);
                 const to = route.redirect;
                 const redirected = route.transfer(from, to);
                 // and start over
@@ -500,9 +569,7 @@ class Router extends EventEmitter {
         if (this.root == undefined) {
             return;
         }
-        // Importing early in case both network
-        // and device is slow, but not awaiting
-        // it just yet.
+        // Importing early, but not awaiting, in case network is slow
         const load = Promise.all(matched.map(route => route.import()));
         // Find the index at which the matched routes
         // differ from the active routes.
@@ -529,9 +596,11 @@ class Router extends EventEmitter {
         const removals = this.elements.slice(start);
         while (removals.length > 0) {
             const element = removals.pop();
-            element.parentElement.removeChild(element);
+            if (element && element.parentElement) {
+                element.parentElement.removeChild(element);
+            }
         }
-        // Discard the removed elements
+        // Discard references to the removed elements
         this.elements = this.elements.slice(0, start);
         // Wait for any asynchronous components to load
         const components = await load;
@@ -606,7 +675,9 @@ class Router extends EventEmitter {
     teardown() {
         while (this.elements.length > 0) {
             const element = this.elements.pop();
-            element.parentElement.removeChild(element);
+            if (element && element.parentElement) {
+                element.parentElement.removeChild(element);
+            }
         }
     }
 }
@@ -629,7 +700,7 @@ class RouterLink extends HTMLElement {
     }
     set exact(v) {
         this.toggleAttribute('exact', v);
-        this.active = this.test(decode(location.pathname));
+        this.active = this.test(decode$1(location.pathname));
     }
     get exact() {
         return this.hasAttribute('exact');
@@ -666,14 +737,14 @@ class RouterLink extends HTMLElement {
             if (a) {
                 a.href = newValue;
             }
-            this.active = this.test(decode(location.pathname));
+            this.active = this.test(decode$1(location.pathname));
         }
     }
     connectedCallback() {
         const a = this.querySelector('a');
         if (a) {
             if (!this.to) {
-                this.to = decode(a.pathname);
+                this.to = decode$1(a.pathname);
             }
             else {
                 a.href = this.to;
@@ -734,11 +805,11 @@ class RouterLink extends HTMLElement {
         }
     }
     onChange() {
-        this.active = this.test(decode(location.pathname));
+        this.active = this.test(decode$1(location.pathname));
     }
 }
 RouterLink.observedAttributes = ['disabled', 'to'];
 RouterLink.tagName = 'router-link';
 
 export default Router;
-export { Router, RouterLink, Query };
+export { Router, RouterLink };
