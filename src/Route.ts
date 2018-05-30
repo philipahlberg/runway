@@ -4,12 +4,14 @@ import { empty, always } from '@philipahlberg/scratchpad';
 import { normalize, decode } from './utils';
 import {
   Component,
-  ComponentFn,
   GuardFn,
   PropertiesFn,
   Record,
-  Snapshot
+  Snapshot,
+  Module
 } from './types';
+
+const isHTMLElement = (o: any): o is HTMLElement => HTMLElement.isPrototypeOf(o);
 
 export class Route extends Path {
   private static cache = new WeakMap<any, HTMLElement>();
@@ -22,24 +24,6 @@ export class Route extends Path {
   properties: PropertiesFn;
   children: Route[];
 
-  static async import(component: Component): Promise<HTMLElement> {
-    if (typeof component !== 'function') {
-      throw new TypeError('Component must be a class or function.');
-    }
-
-    if (HTMLElement.isPrototypeOf(component)) {
-      return component as HTMLElement;
-    } else {
-      const called = (component as ComponentFn)();
-      const resolved = await Promise.resolve(called);
-      if (resolved.default) {
-        return resolved.default;
-      } else {
-        return resolved as HTMLElement;
-      }
-    }
-  }
-
   constructor(record: Record) {
     let { path, component, exact,
       redirect, slot, guard,
@@ -48,7 +32,7 @@ export class Route extends Path {
     // Path should be exact if the route
     // does not have any children,
     // but only if the record does not
-    // specifically declare anything
+    // specify anything
     if (exact == null) {
       exact = (
         children == null ||
@@ -75,12 +59,13 @@ export class Route extends Path {
     const cache = Route.cache;
     const component = this.component;
 
-    if (HTMLElement.isPrototypeOf(component)) {
-      return component as HTMLElement;
+    if (isHTMLElement(component)) {
+      return component;
     } else if (cache.has(component)) {
       return cache.get(component)!;
     } else {
-      const ctor = await Route.import(component);
+      const res = await (this.component as () => Module)();
+      const ctor = res.default as HTMLElement;
       cache.set(component, ctor);
       return ctor;
     }

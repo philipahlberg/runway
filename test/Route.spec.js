@@ -2,21 +2,8 @@ import { Route } from './lib.js';
 
 const SimpleComponent = customElements.get('simple-component');
 const ParamComponent = customElements.get('param-component');
-const AsyncComponent = () => Promise.resolve(SimpleComponent);
 
 describe('Route', () => {
-  describe('.import', () => {
-    it('resolves an ordinary component', async () => {
-      const Component = await Route.import(SimpleComponent);
-      expect(Component).to.equal(SimpleComponent);
-    });
-
-    it('resolves an async component', async () => {
-      const Component = await Route.import(AsyncComponent);
-      expect(Component).to.equal(SimpleComponent);
-    });
-  });
-
   describe('#matches', () => {
     it('matches a simple route', () => {
       const route = new Route({ path: '/' });
@@ -52,15 +39,6 @@ describe('Route', () => {
       const route = new Route({
         path: '/',
         component: 'simple-component'
-      });
-      const Component = await route.import();
-      expect(Component).to.equal(SimpleComponent);
-    });
-
-    it('resolves an async component', async () => {
-      const route = new Route({
-        path: '/',
-        component: AsyncComponent
       });
       const Component = await route.import();
       expect(Component).to.equal(SimpleComponent);

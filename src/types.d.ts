@@ -1,3 +1,5 @@
+export type Module = PromiseLike<ModuleDescriptor>;
+
 export interface ModuleDescriptor {
   default: any;
   [key: string]: any;
@@ -5,8 +7,8 @@ export interface ModuleDescriptor {
 
 export type Tuple<T> = [T, T];
 export type Dictionary<T> = { [key: string]: T };
-export type ComponentFn = () => Promise<HTMLElement | ModuleDescriptor>;
-export type Component = HTMLElement | ComponentFn;
+export type ModuleFn = () => Module;
+export type Component = HTMLElement | ModuleFn;
 export type GuardFn = () => boolean;
 export type PropertiesFn = (snapshot: Snapshot) => Dictionary<any>;
 
@@ -33,8 +35,8 @@ export interface Constructor<T> {
 }
 
 export interface NavigationOptions {
-  data: any;
-  title: string;
+  data?: any;
+  title?: string;
 }
 
 export type PopstateListener = (to: string) => void;
