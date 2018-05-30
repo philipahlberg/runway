@@ -2,7 +2,6 @@ import { Router } from './lib.js';
 
 const SimpleComponent = customElements.get('simple-component');
 const ParamComponent = customElements.get('param-component');
-const AsyncComponent = () => Promise.resolve(SimpleComponent);
 
 const div = () => document.createElement('div');
 
@@ -15,7 +14,7 @@ describe('Router', () => {
       expect(router.routes).to.be.instanceof(Array);
     });
 
-    it('does not render', () => {
+    it('does not render before `connect` has been called', () => {
       const router = new Router([
         { path: '/', component: SimpleComponent }
       ]);

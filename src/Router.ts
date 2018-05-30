@@ -149,7 +149,7 @@ export class Router extends EventEmitter {
       return;
     }
 
-    // Importing early, but not awaiting, in case network is slow
+    // Importing early, but deliberately not awaiting
     const load = Promise.all(matched.map(route => route.import()));
 
     // Find the index at which the matched routes
@@ -198,7 +198,7 @@ export class Router extends EventEmitter {
 
     // Add slot attributes if needed
     for (let i = start; i < this.elements.length; i++) {
-      const element: HTMLElement = this.elements[i];
+      const element = this.elements[i];
       const route = this.matched[i];
       if (route.slot) {
         element.setAttribute('slot', route.slot);
@@ -255,10 +255,10 @@ export class Router extends EventEmitter {
 
         // Resolve additional properties from route
         const properties = route.properties(snapshot);
-        for (const key in properties) {
+        const keys = Object.keys(properties);
+        for (const key of keys) {
           if (options.hasOwnProperty(key)) {
-            const value = properties[key];
-            element[key] = value;
+            element[key] = properties[key];
           }
         }
       }
