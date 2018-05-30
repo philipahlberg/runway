@@ -25,14 +25,12 @@ module.exports = (config) => {
       'test/index.js': ['rollup']
     },
     rollupPreprocessor: rollup,
-    browsers: ['Chrome', 'Edge', 'FirefoxESM'],
+    browsers: ['ChromeHeadless', 'FirefoxHeadless', 'Edge'],
     customLaunchers: {
-      FirefoxESM: {
+      FirefoxHeadless: {
         base: 'Firefox',
-        prefs: {
-          'dom.moduleScripts.enabled': true
-        }
-      }
+        flags: ['-headless'],
+      },
     },
     reporters: ['progress'],
     port: 1234,
