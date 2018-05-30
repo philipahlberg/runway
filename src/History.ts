@@ -1,5 +1,5 @@
-import { EMPTY, decode } from './utils';
 import { PopstateListener, NavigationOptions } from './types';
+import { decode } from './utils';
 
 const h = history;
 
@@ -24,12 +24,12 @@ export class History {
     this.onPopstate(to);
   }
 
-  push(path: string, options: NavigationOptions = EMPTY) {
+  push(path: string, options: NavigationOptions = {}) {
     const { data, title } = options;
     h.pushState(data, title, path);
   }
 
-  replace(path: string, options: NavigationOptions = EMPTY) {
+  replace(path: string, options: NavigationOptions = {}) {
     const { data, title } = options;
     h.replaceState(data, title, path);
   }
