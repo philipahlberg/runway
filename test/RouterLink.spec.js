@@ -1,6 +1,6 @@
 import { Router, RouterLink } from './lib.js';
 
-RouterLink.install();
+RouterLink.define();
 
 const a = (href) => {
   const el = document.createElement('a');

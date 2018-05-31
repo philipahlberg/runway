@@ -6,7 +6,7 @@ export class RouterLink extends HTMLElement {
   static tagName = 'router-link';
   private router: Router;
 
-  static install() {
+  static define() {
     customElements.define(this.tagName, this);
   }
 
