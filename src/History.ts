@@ -1,37 +1,42 @@
-import { PopstateListener, NavigationOptions } from './types';
+import { EventEmitter } from './EventEmitter';
+import { NavigationOptions } from './types';
 import { decode } from './utils';
 
 const h = history;
 
-export class History {
-  onPopstate: PopstateListener;
-
-  constructor(listener: PopstateListener) {
-    this.onPopstate = listener;
-    this.onpop = this.onpop.bind(this);
+export class History extends EventEmitter {
+  constructor() {
+    super();
+    this.onPopstate = this.onPopstate.bind(this);
   }
 
   connect() {
-    window.addEventListener('popstate', this.onpop);
+    window.addEventListener('popstate', this.onPopstate);
   }
 
   disconnect() {
-    window.removeEventListener('popstate', this.onpop);
+    window.removeEventListener('popstate', this.onPopstate);
   }
 
-  onpop() {
-    const to = decode(location.pathname);
-    this.onPopstate(to);
+  onPopstate() {
+    const path = decode(location.pathname);
+    this.emit('popstate', path);
   }
 
   push(path: string, options: NavigationOptions = {}) {
     const { data, title } = options;
     h.pushState(data, title, path);
+    this.emit('pushstate', path);
   }
 
   replace(path: string, options: NavigationOptions = {}) {
     const { data, title } = options;
     h.replaceState(data, title, path);
+    this.emit('replacestate', path);
+  }
+
+  pop() {
+    h.back();
   }
 
   go(delta: number) {
