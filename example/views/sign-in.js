@@ -1,4 +1,4 @@
-import Router from '/routes.js';
+import router from '/routes.js';
 import { signin } from '/auth.js';
 
 export default class SignIn extends HTMLElement {
@@ -34,7 +34,7 @@ export default class SignIn extends HTMLElement {
     const { name, password } = event.target.elements;
     let success = signin(name.value, password.value);
     if (success) {
-      Router.push('/admin');
+      router.push('/admin');
     }
   }
 }

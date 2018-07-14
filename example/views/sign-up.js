@@ -1,5 +1,5 @@
-import Router from '../routes.js';
-import { signup } from '../auth.js';
+import router from '/routes.js';
+import { signup, signin } from '../auth.js';
 
 export default class SignUp extends HTMLElement {
   connectedCallback() {
@@ -33,7 +33,8 @@ export default class SignUp extends HTMLElement {
     event.preventDefault();
     const { name, password } = event.target.elements;
     signup(name.value, password.value);
-    this.appendChild(document.createTextNode('Success!'));
+    signin(name.value, password.value);
+    router.push('/admin');
   }
 }
 
