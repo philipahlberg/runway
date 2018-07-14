@@ -1,18 +1,20 @@
 import { Router } from './Router';
 import { decode } from './utils';
+import { RouterLinkOptions } from './types';
 
 export class RouterLink extends HTMLElement {
   static observedAttributes = ['disabled', 'to'];
   static tagName = 'router-link';
-  private router: Router;
+  private static router: Router;
 
-  static define() {
-    customElements.define(this.tagName, this);
+  static define(tagName = 'router-link', options: RouterLinkOptions) {
+    this.tagName = tagName;
+    this.router = options.router;
+    customElements.define(tagName, this);
   }
 
   constructor() {
     super();
-    this.router = Router.instance;
     this.onClick = this.onClick.bind(this);
     this.onChange = this.onChange.bind(this);
   }
@@ -48,6 +50,10 @@ export class RouterLink extends HTMLElement {
 
   get disabled(): boolean {
     return this.hasAttribute('disabled');
+  }
+
+  get router(): Router {
+    return RouterLink.router;
   }
 
   attributeChangedCallback(attr: string, oldValue: string, newValue: string) {

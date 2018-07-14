@@ -1,3 +1,5 @@
+import { Router } from './Router';
+
 export type Module = PromiseLike<ModuleDescriptor>;
 
 export interface ModuleDescriptor {
@@ -46,3 +48,7 @@ export type PopstateListener = (to: string) => void;
 export type EventEmitterListener = (detail?: any) => void;
 
 export type URI = { pathname: string, search: string, hash: string };
+
+export interface RouterLinkOptions {
+  router: Router;
+}
