@@ -4,7 +4,7 @@ import { RouterLinkOptions } from './types';
 
 export class RouterLink extends HTMLElement {
   static observedAttributes = ['disabled', 'to'];
-  static tagName = 'router-link';
+  static tagName: string;
   private static router: Router;
 
   static define(tagName = 'router-link', options: RouterLinkOptions) {
