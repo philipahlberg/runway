@@ -1,6 +1,4 @@
 interface HTMLElement {
-  new(): HTMLElement;
-  prototype: HTMLElement;
   connectedCallback?(): void;
   disconnectedCallback?(): void;
   adoptedCallback?(): void;
