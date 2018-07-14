@@ -58,6 +58,4 @@ const router = new Router([
 ]);
 
 router.connect(document.body);
-window.Router = router;
-
-export default router;
+export { router };
