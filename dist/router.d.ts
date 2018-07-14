@@ -1,18 +1,17 @@
-import { EventEmitter } from './event-emitter';
-import { Route } from './route';
-import { History } from './history';
+import { EventEmitter } from './EventEmitter';
+import { Route } from './Route';
+import { History } from './History';
 import { Record, NavigationOptions } from './types';
 export interface SearchResult {
     matched: Route[];
     path: string;
 }
 export declare class Router extends EventEmitter {
-    static instance: Router;
     isConnected: boolean;
     history: History;
     routes: Route[];
     elements: HTMLElement[];
-    matched: Route[];
+    activeRoutes: Route[];
     root?: HTMLElement;
     constructor(records: Record[]);
     /**
@@ -27,10 +26,7 @@ export declare class Router extends EventEmitter {
      * removes all listeners, effectively leaving the router inactive.
      */
     disconnect(): void;
-    /**
-     * @private
-     */
-    onpop(to: string): void;
+    private onPopstate(to);
     /**
      * Push a history entry onto the stack.
      */
@@ -40,33 +36,28 @@ export declare class Router extends EventEmitter {
      */
     replace(to: string, options?: NavigationOptions): Promise<void>;
     /**
-     * Traverse through the history stack.
+     * Pop the top `n` entries off of history stack.
      */
-    go(entries: number): void;
+    pop(n?: number): void;
+    private search(path, routes, matched);
     /**
-     * @private
-     */
-    search(path: string, routes: Route[], matched: Route[]): SearchResult;
-    /**
-     * @private
      * Search for the elements that would match the given path.
      * If a redirect is encountered, it will be followed.
      * The resulting path and the matched elements are returned.
      */
-    match(path: string): SearchResult;
+    private match(path);
     /**
-     * @private
      * Render the given routes.
      * The routes are assumed to be nested.
      */
-    render(matched: Route[]): Promise<void>;
+    private render(matchedRoutes);
     /**
      * Update all `:param` bindings and `properties` functions in the tree.
      */
-    updateProperties(): void;
+    private updateProperties();
     /**
      * Remove all currently active elements.
      */
-    teardown(): void;
+    private teardown();
 }
 export default Router;

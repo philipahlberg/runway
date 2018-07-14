@@ -1,5 +1,5 @@
 import Path from '@philipahlberg/path';
-import { Component, GuardFn, PropertiesFn, Record, Snapshot } from './types';
+import { Component, GuardFn, PropertiesFn, Record, Snapshot, CustomElement } from './types';
 export declare class Route extends Path {
     private static cache;
     path: string;
@@ -10,8 +10,7 @@ export declare class Route extends Path {
     guard: GuardFn;
     properties: PropertiesFn;
     children: Route[];
-    static import(component: Component): Promise<HTMLElement>;
     constructor(record: Record);
-    import(): Promise<HTMLElement>;
+    import(): Promise<CustomElement>;
     snapshot(source: Location | URL): Snapshot;
 }

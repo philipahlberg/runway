@@ -1,2 +1,2 @@
-export { Router, default } from './router';
-export { RouterLink } from './router-link';
+export { Router, default } from './Router';
+export { RouterLink } from './RouterLink';

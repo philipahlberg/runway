@@ -1,11 +1,11 @@
-import { PopstateListener, NavigationOptions } from './types';
-export declare class History {
-    onPopstate: PopstateListener;
-    constructor(listener: PopstateListener);
+import { EventEmitter } from './EventEmitter';
+import { NavigationOptions } from './types';
+export declare class History extends EventEmitter {
+    constructor();
     connect(): void;
     disconnect(): void;
-    onpop(): void;
+    onPopstate(): void;
     push(path: string, options?: NavigationOptions): void;
     replace(path: string, options?: NavigationOptions): void;
-    go(delta: number): void;
+    pop(n?: number): void;
 }

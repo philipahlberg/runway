@@ -325,16 +325,6 @@ function normalize(path) {
 function decode$1(str) {
     return decodeURIComponent(str);
 }
-/**
- * Shorthand for `Object.freeze`.
- */
-function freeze$1(object) {
-    return Object.freeze(object);
-}
-/**
- * A frozen object with no prototype chain.
- */
-const EMPTY$1 = freeze$1(Object.create(null));
 
 class Route extends Path {
     constructor(record) {
@@ -342,7 +332,7 @@ class Route extends Path {
         // Path should be exact if the route
         // does not have any children,
         // but only if the record does not
-        // specifically declare anything
+        // specify anything
         if (exact == null) {
             exact = (children == null ||
                 children.length === 0);
@@ -359,35 +349,18 @@ class Route extends Path {
         this.properties = properties || empty;
         this.children = (children || []).map(child => createChildRoute(child, this));
     }
-    static async import(component) {
-        if (typeof component !== 'function') {
-            throw new TypeError('Component must be a class or function.');
-        }
-        if (HTMLElement.isPrototypeOf(component)) {
-            return component;
-        }
-        else {
-            const called = component();
-            const resolved = await Promise.resolve(called);
-            if (resolved.default) {
-                return resolved.default;
-            }
-            else {
-                return resolved;
-            }
-        }
-    }
     async import() {
         const cache$$1 = Route.cache;
         const component = this.component;
-        if (HTMLElement.isPrototypeOf(component)) {
+        if (isHTMLElement(component)) {
             return component;
         }
         else if (cache$$1.has(component)) {
             return cache$$1.get(component);
         }
         else {
-            const ctor = await Route.import(component);
+            const res = await this.component();
+            const ctor = res.default;
             cache$$1.set(component, ctor);
             return ctor;
         }
@@ -415,33 +388,38 @@ function createChildRoute(record, parent) {
     }
     return new Route(record);
 }
+function isHTMLElement(o) {
+    return HTMLElement.isPrototypeOf(o);
+}
 
 const h = history;
-class History {
-    constructor(listener) {
-        this.onPopstate = listener;
-        this.onpop = this.onpop.bind(this);
+class History extends EventEmitter {
+    constructor() {
+        super();
+        this.onPopstate = this.onPopstate.bind(this);
     }
     connect() {
-        window.addEventListener('popstate', this.onpop);
+        window.addEventListener('popstate', this.onPopstate);
     }
     disconnect() {
-        window.removeEventListener('popstate', this.onpop);
+        window.removeEventListener('popstate', this.onPopstate);
     }
-    onpop() {
-        const to = decode$1(location.pathname);
-        this.onPopstate(to);
+    onPopstate() {
+        const path = decode$1(location.pathname);
+        this.emit('pop', { path });
     }
-    push(path, options = EMPTY$1) {
+    push(path, options = {}) {
         const { data, title } = options;
-        h.pushState(data, title, path);
+        h.pushState(data, title || document.title, path);
+        this.emit('push', { path });
     }
-    replace(path, options = EMPTY$1) {
+    replace(path, options = {}) {
         const { data, title } = options;
-        h.replaceState(data, title, path);
+        h.replaceState(data, title || document.title, path);
+        this.emit('replace', { path });
     }
-    go(delta) {
-        h.go(delta);
+    pop(n = 1) {
+        h.go(-n);
     }
 }
 
@@ -450,11 +428,11 @@ class Router extends EventEmitter {
         super();
         this.isConnected = false;
         this.elements = [];
-        this.matched = [];
+        this.activeRoutes = [];
         this.routes = records.map(record => new Route(record));
-        this.onpop = this.onpop.bind(this);
-        this.history = new History(this.onpop);
-        Router.instance = this;
+        this.onPopstate = this.onPopstate.bind(this);
+        this.history = new History();
+        this.history.on('pop', this.onPopstate);
     }
     /**
      * Connect the router to an element.
@@ -478,16 +456,13 @@ class Router extends EventEmitter {
      */
     disconnect() {
         this.isConnected = false;
-        this.matched = [];
+        this.activeRoutes = [];
         this.root = undefined;
         this.teardown();
         this.history.disconnect();
         this.emit('disconnect');
     }
-    /**
-     * @private
-     */
-    onpop(to) {
+    onPopstate(to) {
         const { matched, path } = this.match(to);
         if (to !== path) {
             this.history.replace(path);
@@ -498,34 +473,30 @@ class Router extends EventEmitter {
     /**
      * Push a history entry onto the stack.
      */
-    push(to, options) {
+    async push(to, options) {
         to = decode$1(to);
         const { matched, path } = this.match(to);
         this.history.push(path, options);
         this.emit('push');
-        return this.render(matched);
+        await this.render(matched);
     }
     /**
      * Replace the topmost entry in the history stack.
      */
-    replace(to, options) {
+    async replace(to, options) {
         to = decode$1(to);
         const { matched, path } = this.match(to);
         this.history.replace(path, options);
         this.emit('replace');
-        return this.render(matched);
+        await this.render(matched);
     }
     /**
-     * Traverse through the history stack.
+     * Pop the top `n` entries off of history stack.
      */
-    go(entries) {
-        // triggers onpop(), so no need to render
-        // in this method call
-        this.history.go(entries);
+    pop(n = 1) {
+        // triggers onpop(), so no need to render here
+        this.history.pop(n);
     }
-    /**
-     * @private
-     */
     search(path, routes, matched) {
         const route = routes.find(r => r.matches(path) && r.guard());
         if (route) {
@@ -552,7 +523,6 @@ class Router extends EventEmitter {
         }
     }
     /**
-     * @private
      * Search for the elements that would match the given path.
      * If a redirect is encountered, it will be followed.
      * The resulting path and the matched elements are returned.
@@ -561,39 +531,27 @@ class Router extends EventEmitter {
         return this.search(path, this.routes, []);
     }
     /**
-     * @private
      * Render the given routes.
      * The routes are assumed to be nested.
      */
-    async render(matched) {
+    async render(matchedRoutes) {
         if (this.root == undefined) {
             return;
         }
-        // Importing early, but not awaiting, in case network is slow
-        const load = Promise.all(matched.map(route => route.import()));
+        // Importing early, but deliberately not awaiting
+        const load = Promise.all(matchedRoutes.map(route => route.import()));
         // Find the index at which the matched routes
         // differ from the active routes.
-        let start;
-        for (let i = 0; i < matched.length; i++) {
-            const match = matched[i];
-            if (this.matched.length < i + 1) {
-                start = i;
+        let startIndex;
+        const activeRoutes = this.activeRoutes;
+        const length = Math.min(matchedRoutes.length, activeRoutes.length);
+        for (startIndex = 0; startIndex < length; startIndex++) {
+            if (matchedRoutes[startIndex] !== activeRoutes[startIndex])
                 break;
-            }
-            else {
-                const active = this.matched[i];
-                if (match !== active) {
-                    start = i;
-                    break;
-                }
-            }
         }
-        if (start == null) {
-            start = matched.length;
-        }
-        this.matched = matched;
+        this.activeRoutes = matchedRoutes;
         // Remove the obsolete elements from the DOM
-        const removals = this.elements.slice(start);
+        const removals = this.elements.slice(startIndex);
         while (removals.length > 0) {
             const element = removals.pop();
             if (element && element.parentElement) {
@@ -601,18 +559,18 @@ class Router extends EventEmitter {
             }
         }
         // Discard references to the removed elements
-        this.elements = this.elements.slice(0, start);
+        this.elements = this.elements.slice(0, startIndex);
         // Wait for any asynchronous components to load
         const components = await load;
         // Create the new elements
         const additions = components
-            .slice(start)
+            .slice(startIndex)
             .map((Component) => new Component());
         this.elements = this.elements.concat(additions);
         // Add slot attributes if needed
-        for (let i = start; i < this.elements.length; i++) {
+        for (let i = startIndex; i < this.elements.length; i++) {
             const element = this.elements[i];
-            const route = this.matched[i];
+            const route = this.activeRoutes[i];
             if (route.slot) {
                 element.setAttribute('slot', route.slot);
             }
@@ -628,11 +586,11 @@ class Router extends EventEmitter {
         this.updateProperties();
         // If there are any additions, they need to be rendered
         if (additions.length > 0) {
-            if (start > 0) {
+            if (startIndex > 0) {
                 // Some reuse
                 // Connect the new elements to the deepest reused element,
                 // implicitly rendering them
-                this.elements[start - 1].appendChild(additions[0]);
+                this.elements[startIndex - 1].appendChild(additions[0]);
             }
             else {
                 // No reuse
@@ -647,8 +605,9 @@ class Router extends EventEmitter {
     updateProperties() {
         for (let i = 0; i < this.elements.length; i++) {
             const element = this.elements[i];
-            const options = customElements.get(element.tagName.toLowerCase()).properties;
-            const route = this.matched[i];
+            const definition = customElements.get(element.tagName.toLowerCase());
+            const options = definition.properties;
+            const route = this.activeRoutes[i];
             if (options != undefined) {
                 const snapshot = route.snapshot(window.location);
                 const parameters = snapshot.parameters;
@@ -660,10 +619,10 @@ class Router extends EventEmitter {
                 }
                 // Resolve additional properties from route
                 const properties = route.properties(snapshot);
-                for (const key in properties) {
+                const keys = Object.keys(properties);
+                for (const key of keys) {
                     if (options.hasOwnProperty(key)) {
-                        const value = properties[key];
-                        element[key] = value;
+                        element[key] = properties[key];
                     }
                 }
             }
@@ -675,6 +634,9 @@ class Router extends EventEmitter {
     teardown() {
         while (this.elements.length > 0) {
             const element = this.elements.pop();
+            // need to use parentElement.removeChild()
+            // (as opposed to element.remove())
+            // to avoid bug in Edge
             if (element && element.parentElement) {
                 element.parentElement.removeChild(element);
             }
@@ -685,12 +647,13 @@ class Router extends EventEmitter {
 class RouterLink extends HTMLElement {
     constructor() {
         super();
-        this.router = Router.instance;
         this.onClick = this.onClick.bind(this);
         this.onChange = this.onChange.bind(this);
     }
-    static install() {
-        customElements.define(this.tagName, this);
+    static define(tagName = 'router-link', options) {
+        this.tagName = tagName;
+        this.router = options.router;
+        customElements.define(tagName, this);
     }
     set to(v) {
         this.setAttribute('to', v);
@@ -716,6 +679,9 @@ class RouterLink extends HTMLElement {
     }
     get disabled() {
         return this.hasAttribute('disabled');
+    }
+    get router() {
+        return RouterLink.router;
     }
     attributeChangedCallback(attr, oldValue, newValue) {
         if (oldValue === newValue) {
