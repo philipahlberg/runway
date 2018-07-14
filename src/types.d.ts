@@ -34,6 +34,8 @@ export interface Constructor<T> {
   new (...args: any[]): T;
 }
 
+export type CustomElement = Constructor<HTMLElement>;
+
 export interface NavigationOptions {
   data?: any;
   title?: string;
