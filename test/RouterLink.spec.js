@@ -1,6 +1,5 @@
 import { Router, RouterLink } from './lib.js';
 
-RouterLink.define();
 
 const a = (href) => {
   const el = document.createElement('a');
@@ -23,6 +22,10 @@ describe('<router-link>', async () => {
 
   after(() => {
     router.disconnect();
+  });
+  
+  it('accepts tagName and options in .define()', () => {
+    RouterLink.define('router-link', { router });
   });
 
   it('applies active attribute when it matches', async () => {
