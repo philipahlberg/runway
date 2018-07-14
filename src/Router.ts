@@ -10,7 +10,6 @@ export interface SearchResult {
 }
 
 export class Router extends EventEmitter {
-  static instance: Router;
   isConnected: boolean;
   history: History;
   routes: Route[];
@@ -27,7 +26,6 @@ export class Router extends EventEmitter {
     this.onpop = this.onpop.bind(this);
     this.history = new History();
     this.history.on('popstate', this.onpop);
-    Router.instance = this;
   }
 
   /**
