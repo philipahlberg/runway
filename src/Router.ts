@@ -60,9 +60,6 @@ export class Router extends EventEmitter {
     this.emit('disconnect');
   }
 
-  /**
-   * @private
-   */
   private onpop(to: string): void {
     const { matched, path } = this.match(to);
     if (to !== path) {
@@ -94,22 +91,14 @@ export class Router extends EventEmitter {
     return this.render(matched);
   }
 
-  pop() {
-    this.history.pop();
+  /**
+   * Pop the top `n` entries off of history stack.
+   */
+  pop(n: number = 1) {
+    // triggers onpop(), so no need to render here
+    this.history.pop(n);
   }
 
-  /**
-   * Traverse through the history stack.
-   */
-  go(entries: number) {
-    // triggers onpop(), so no need to render
-    // in this method call
-    this.history.go(entries);
-  }
-
-  /**
-   * @private
-   */
   private search(path: string, routes: Route[], matched: Route[]): SearchResult {
     const route = routes.find(r => r.matches(path) && r.guard());
 
@@ -135,7 +124,6 @@ export class Router extends EventEmitter {
   }
 
   /**
-   * @private
    * Search for the elements that would match the given path.
    * If a redirect is encountered, it will be followed.
    * The resulting path and the matched elements are returned.
@@ -145,7 +133,6 @@ export class Router extends EventEmitter {
   }
 
   /**
-   * @private
    * Render the given routes.
    * The routes are assumed to be nested.
    */
