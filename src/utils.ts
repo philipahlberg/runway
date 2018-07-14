@@ -1,8 +1,19 @@
 /**
- * Append a leading slash, and remove all excess slashes.
+ * Remove all excess slashes.
+ * 
+ * @param path the path to normalize
  */
 export function normalize(path: string): string {
-  return ('/' + path).replace(/[\/]+/g, '/');
+  return path.replace(/[\/]+/g, '/');
+}
+
+/**
+ * Join the given segments as one path.
+ * 
+ * @param segments the segments to be joined
+ */
+export function join(...segments: string[]): string {
+  return normalize(segments.join('/'));
 }
 
 /**
