@@ -23,9 +23,9 @@ export class Router extends EventEmitter {
     this.elements = [];
     this.activeRoutes = [];
     this.routes = records.map(record => new Route(record));
-    this.onpop = this.onpop.bind(this);
+    this.onPopstate = this.onPopstate.bind(this);
     this.history = new History();
-    this.history.on('popstate', this.onpop);
+    this.history.on('pop', this.onPopstate);
   }
 
   /**
@@ -58,7 +58,7 @@ export class Router extends EventEmitter {
     this.emit('disconnect');
   }
 
-  private onpop(to: string): void {
+  private onPopstate(to: string): void {
     const { matched, path } = this.match(to);
     if (to !== path) {
       this.history.replace(path);
@@ -70,23 +70,23 @@ export class Router extends EventEmitter {
   /**
    * Push a history entry onto the stack.
    */
-  push(to: string, options?: NavigationOptions): Promise<void> {
+  async push(to: string, options?: NavigationOptions): Promise<void> {
     to = decode(to);
     const { matched, path } = this.match(to);
     this.history.push(path, options);
     this.emit('push');
-    return this.render(matched);
+    await this.render(matched);
   }
 
   /**
    * Replace the topmost entry in the history stack.
    */
-  replace(to: string, options?: NavigationOptions): Promise<void> {
+  async replace(to: string, options?: NavigationOptions): Promise<void> {
     to = decode(to);
     const { matched, path } = this.match(to);
     this.history.replace(path, options);
     this.emit('replace');
-    return this.render(matched);
+    await this.render(matched);
   }
 
   /**

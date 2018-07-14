@@ -20,19 +20,19 @@ export class History extends EventEmitter {
 
   onPopstate() {
     const path = decode(location.pathname);
-    this.emit('popstate', { path });
+    this.emit('pop', { path });
   }
 
   push(path: string, options: NavigationOptions = {}) {
     const { data, title } = options;
     h.pushState(data, title || document.title, path);
-    this.emit('pushstate', { path });
+    this.emit('push', { path });
   }
 
   replace(path: string, options: NavigationOptions = {}) {
     const { data, title } = options;
     h.replaceState(data, title || document.title, path);
-    this.emit('replacestate', { path });
+    this.emit('replace', { path });
   }
 
   pop(n: number = 1) {
