@@ -1,7 +1,6 @@
-import Query from '@philipahlberg/query';
-import Path from '@philipahlberg/path';
-import { empty, always } from '@philipahlberg/scratchpad';
-import { normalize, decode } from './utils';
+import { parse, compile, execute, map } from '@philipahlberg/expressionist';
+import { Query } from './Query';
+import { join, decode } from './utils';
 import {
   Component,
   GuardFn,
@@ -12,8 +11,10 @@ import {
   CustomElement
 } from './types';
 
-export class Route extends Path {
+export class Route {
   private static cache = new WeakMap<any, CustomElement>();
+  private keys: string[];
+  private pattern: RegExp;
   path: string;
   exact: boolean;
   component: Component;
@@ -33,13 +34,12 @@ export class Route extends Path {
     // but only if the record does not
     // specify anything
     if (exact == null) {
-      exact = (
-        children == null ||
-        children.length === 0
-      );
+      exact = children == null ||
+        children.length === 0;
     }
 
-    super(path, exact);
+    this.keys = parse(path);
+    this.pattern = compile(path, exact);
     this.path = path;
     this.exact = exact;
     this.redirect = redirect;
@@ -47,8 +47,8 @@ export class Route extends Path {
       ? customElements.get(component)
       : component;
     this.slot = slot;
-    this.guard = guard || always;
-    this.properties = properties || empty;
+    this.guard = guard || (() => true);
+    this.properties = properties || (() => ({}));
     this.children = (children || []).map(child =>
       createChildRoute(child, this)
     );
@@ -71,13 +71,40 @@ export class Route extends Path {
   }
 
   snapshot(source: Location | URL): Snapshot {
-    const { pathname, search, hash } = source;
+    let { pathname, search, hash } = source;
+    pathname = decode(pathname);
+    search = decode(search);
     return {
-      parameters: this.toMap(decode(pathname)),
-      query: Query.parse(decode(search)),
-      matched: this.matched(decode(pathname)),
+      parameters: this.map(pathname),
+      query: Query.parse(search),
+      matched: this.matched(pathname),
       hash: hash.substring(1)
     };
+  }
+
+  transfer(source: string, target: string): string {
+    const values = execute(this.pattern, source);
+    let i = values.length;
+    while (i--) {
+      target = target
+        .replace(':' + this.keys[i], values[i]);
+    }
+
+    return target;
+  }
+
+  matches(path: string): boolean {
+    return this.pattern.test(path);
+  }
+
+  matched(path: string): string {
+    const matched = this.pattern.exec(path);
+    return matched && matched[0] || '';
+  }
+
+  map(path: string): Map<string, string> {
+    const values = execute(this.pattern, path);
+    return map(this.keys, values);
   }
 }
 
@@ -85,10 +112,10 @@ function createChildRoute(record: Record, parent: Route): Route {
   if (record.path === '') {
     record.path = parent.path;
   } else {
-    record.path = normalize(parent.path + '/' + record.path);
+    record.path = join(parent.path, record.path);
   }
   if (record.redirect != null) {
-    record.redirect = normalize(parent.path + '/' + record.redirect);
+    record.redirect = join(parent.path, record.redirect);
   }
   return new Route(record);
 }
