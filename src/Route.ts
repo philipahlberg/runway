@@ -8,13 +8,12 @@ import {
   PropertiesFn,
   Record,
   Snapshot,
-  Module
+  Module,
+  CustomElement
 } from './types';
 
-const isHTMLElement = (o: any): o is HTMLElement => HTMLElement.isPrototypeOf(o);
-
 export class Route extends Path {
-  private static cache = new WeakMap<any, HTMLElement>();
+  private static cache = new WeakMap<any, CustomElement>();
   path: string;
   exact: boolean;
   component: Component;
@@ -55,7 +54,7 @@ export class Route extends Path {
     );
   }
 
-  async import(): Promise<HTMLElement> {
+  async import(): Promise<CustomElement> {
     const cache = Route.cache;
     const component = this.component;
 
@@ -65,7 +64,7 @@ export class Route extends Path {
       return cache.get(component)!;
     } else {
       const res = await (this.component as () => Module)();
-      const ctor = res.default as HTMLElement;
+      const ctor = res.default as CustomElement;
       cache.set(component, ctor);
       return ctor;
     }
@@ -92,4 +91,8 @@ function createChildRoute(record: Record, parent: Route): Route {
     record.redirect = normalize(parent.path + '/' + record.redirect);
   }
   return new Route(record);
+}
+
+function isHTMLElement(o: any): o is CustomElement {
+  return HTMLElement.isPrototypeOf(o);
 }
