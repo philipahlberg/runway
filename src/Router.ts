@@ -216,21 +216,12 @@ export class Router extends EventEmitter {
   private updateProperties() {
     for (let i = 0; i < this.elements.length; i++) {
       const element = this.elements[i];
-      const definition = customElements.get(
-        element.tagName.toLowerCase()
-      );
-      const options = definition.properties;
       const route = this.activeRoutes[i];
-
-      if (options != undefined) {
-        const snapshot = route.snapshot(window.location);
-        const properties = route.properties(snapshot);
-        const keys = Object.keys(properties);
-        for (const key of keys) {
-          if (options.hasOwnProperty(key)) {
-            element[key] = properties[key];
-          }
-        }
+      const snapshot = route.snapshot(window.location);
+      const properties = route.properties(snapshot);
+      const keys = Object.keys(properties);
+      for (const key of keys) {
+        element[key] = properties[key];
       }
     }
   }

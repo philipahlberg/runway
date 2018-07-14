@@ -159,7 +159,7 @@ describe('Router', () => {
         {
           path: '/',
           component: SimpleComponent,
-          properties: () => ({ param: '123' })
+          properties: () => ({ foo: 'bar' })
         }
       ]);
 
@@ -167,23 +167,39 @@ describe('Router', () => {
       await router.connect(outlet);
       await router.push('/');
 
-      expect(outlet.firstChild.param).to.equal('123');
+      const component = outlet.firstChild;
+
+      expect(component.foo).to.equal('bar');
     });
 
     it('passes a route snapshot to the properties function', async () => {
       const router = new Router([
         {
-          path: '/',
+          path: '/:foo',
           component: SimpleComponent,
-          properties: route => ({ param: route.query.get('q') })
+          properties: route => route
         }
       ]);
 
       const outlet = div();
       await router.connect(outlet);
-      await router.push('/?q=123');
+      await router.push('/bar?foo=bar#hash');
 
-      expect(outlet.firstChild.param).to.equal('123');
+      const component = outlet.firstChild;
+
+      const { parameters, query, matched, hash } = component;
+
+      expect(parameters).to.be.an.instanceOf(Map);
+      expect(parameters.get('foo')).to.equal('bar');
+
+      expect(query).to.be.an.instanceOf(Map);
+      expect(query.get('foo')).to.equal('bar');
+
+      expect(matched).to.be.a('string');
+      expect(matched).to.equal('/bar');
+
+      expect(hash).to.be.a('string');
+      expect(hash).to.equal('hash');
     });
 
     it('nests components from nested routes', async () => {
@@ -204,7 +220,7 @@ describe('Router', () => {
       const inner = outer.firstChild;
 
       expect(outer).to.be.instanceof(SimpleComponent);
-      expect(inner).to.be.instanceof(ParamComponent);
+      expect(inner).to.be.instanceof(SimpleComponent);
     });
   });
 });
