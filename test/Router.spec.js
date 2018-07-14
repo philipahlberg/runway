@@ -1,7 +1,6 @@
 import { Router } from './lib.js';
 
 const SimpleComponent = customElements.get('simple-component');
-const ParamComponent = customElements.get('param-component');
 
 const div = () => document.createElement('div');
 
@@ -155,23 +154,11 @@ describe('Router', () => {
       expect(outlet.firstChild).to.be.instanceof(SimpleComponent);
     });
 
-    it('resolves parameters as props', async () => {
-      const router = new Router([
-        { path: '/:param', component: ParamComponent }
-      ]);
-  
-      const outlet = div();
-      await router.connect(outlet);
-      await router.push('/123');
-  
-      expect(outlet.firstChild.param).to.equal('123');
-    });
-
     it('resolves properties function as props', async () => {
       const router = new Router([
         {
           path: '/',
-          component: ParamComponent,
+          component: SimpleComponent,
           properties: () => ({ param: '123' })
         }
       ]);
@@ -187,7 +174,7 @@ describe('Router', () => {
       const router = new Router([
         {
           path: '/',
-          component: ParamComponent,
+          component: SimpleComponent,
           properties: route => ({ param: route.query.get('q') })
         }
       ]);
@@ -205,7 +192,7 @@ describe('Router', () => {
         component: SimpleComponent,
         children: [{
           path: ':param',
-          component: ParamComponent
+          component: SimpleComponent
         }]
       }]);
 

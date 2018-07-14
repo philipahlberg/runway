@@ -1,7 +1,6 @@
 import { Route } from './lib.js';
 
 const SimpleComponent = customElements.get('simple-component');
-const ParamComponent = customElements.get('param-component');
 
 describe('Route', () => {
   describe('#matches', () => {

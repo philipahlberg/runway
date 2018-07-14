@@ -224,15 +224,6 @@ export class Router extends EventEmitter {
 
       if (options != undefined) {
         const snapshot = route.snapshot(window.location);
-        const parameters = snapshot.parameters;
-        // Resolve parameters from path
-        for (const [key, value] of parameters) {
-          if (options.hasOwnProperty(key)) {
-            element[key] = value;
-          }
-        }
-
-        // Resolve additional properties from route
         const properties = route.properties(snapshot);
         const keys = Object.keys(properties);
         for (const key of keys) {
