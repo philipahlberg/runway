@@ -1,6 +1,9 @@
 # Runway
 A modern router for building single-page applications with web components.
 
+## Warning
+Runway has not reached 1.0 yet, and so the API is unstable. Expect breaking changes between minor versions until 1.0.
+
 ## Overview
 Runway is heavily inspired by the Vue router, so if you've used that before, you should feel right at home with Runway.
 
