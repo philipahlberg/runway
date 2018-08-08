@@ -51,9 +51,5 @@
     "rollup-plugin-uglify": "^3.0.0",
     "typescript": "^2.7.2"
   },
-  "dependencies": {
-    "@philipahlberg/path": "^0.1.1",
-    "@philipahlberg/query": "^0.1.1",
-    "@philipahlberg/scratchpad": "^0.1.1"
-  }
+  "dependencies": {}
 }

@@ -2,24 +2,6 @@
 # yarn lockfile v1
 
 
-"@philipahlberg/expressionist@^0.1.2":
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/@philipahlberg/expressionist/-/expressionist-0.1.2.tgz#ced88fc8a7a37407e5273a9b82b74a4c6d92cdb3"
-
-"@philipahlberg/path@^0.1.1":
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/@philipahlberg/path/-/path-0.1.1.tgz#6c4cf710bbde65569fb54cbdf620aadc3d25937a"
-  dependencies:
-    "@philipahlberg/expressionist" "^0.1.2"
-
-"@philipahlberg/query@^0.1.1":
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/@philipahlberg/query/-/query-0.1.1.tgz#c5c470faacaec9362c1bdfc9b179839af48c6acb"
-
-"@philipahlberg/scratchpad@^0.1.1":
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/@philipahlberg/scratchpad/-/scratchpad-0.1.1.tgz#9b270842eb9432137cb2cf2a6bda0a70123f82e3"
-
 "@webcomponents/custom-elements@^1.0.8":
   version "1.0.8"
   resolved "https://registry.yarnpkg.com/@webcomponents/custom-elements/-/custom-elements-1.0.8.tgz#b7b8ef7248f7681d1ad4286a0ada5fe3c2bc7228"
