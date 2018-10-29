@@ -18,7 +18,7 @@
   "scripts": {
     "dev": "npm run test:watch",
     "test": "karma start scripts/karma.prod.js",
-    "test:watch": "karma start scripts/karma.dev.js",
+    "test:dev": "karma start scripts/karma.dev.js",
     "build": "npm run build:types && npm run build:prod",
     "build:types": "tsc --emitDeclarationOnly",
     "build:dev": "rollup -w -c scripts/rollup.dev.js",
