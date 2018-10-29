@@ -1,11 +1,13 @@
-import { Route } from './lib.js';
-
-const SimpleComponent = customElements.get('simple-component');
+import { Route } from '../../src/Route.ts';
+import { StaticComponent } from './StaticComponent.js';
 
 describe('Route', () => {
   describe('#matches', () => {
     it('matches a simple route', () => {
-      const route = new Route({ path: '/' });
+      const route = new Route({
+        path: '/',
+        component: StaticComponent
+      });
       expect(route.matches('/')).to.be.true;
     });
 
@@ -17,41 +19,34 @@ describe('Route', () => {
     it('supports nesting', () => {
       const route = new Route({
         path: '/a',
-        children: [{ path: 'b' }]
+        component: StaticComponent,
+        children: [{ path: 'b', component: StaticComponent }]
       });
       const child = route.children[0];
-      expect(child.matches('/a/b')).to.be.true;
+      expect(child.matches('/a/b')).to.equal(true);
     });
   });
 
   describe('#import', async () => {
-    it('resolves an ordinary component', async () => {
+    it('resolves a static component', async () => {
       const route = new Route({
         path: '/',
-        component: SimpleComponent
+        component: StaticComponent
       });
       const Component = await route.import();
-      expect(Component).to.equal(SimpleComponent);
+      expect(Component).to.equal(StaticComponent);
     });
 
-    it('resolves a string', async () => {
+    it('resolves a dynamic component', async () => {
       const route = new Route({
         path: '/',
-        component: 'simple-component'
+        load: () => import('./DynamicComponent.js')
       });
+
       const Component = await route.import();
-      expect(Component).to.equal(SimpleComponent);
+      const DynamicComponent = customElements.get('dynamic-component');
+      expect(Component).to.equal(DynamicComponent);
     });
-
-    // it('resolves an imported component', async () => {
-    //   const route = new Route({
-    //     path: '/',
-    //     component: () => import('./import.js')
-    //   });
-
-    //   const Component = await route.import();
-    //   expect(customElements.get('imported-component')).to.equal(Component);
-    // });
   });
 
   describe('#snapshot', () => {
@@ -65,6 +60,18 @@ describe('Route', () => {
       expect(query.get('q')).to.equal('456');
       expect(hash).to.equal('hash');
       expect(matched).to.equal('/123');
+    });
+  });
+
+  describe('#transfer', () => {
+    it('transfers parameters from one route to another', () => {
+      const route = new Route({
+        path: '/:a/:b/:c'
+      });
+      const source = '/1/2/3';
+      const target = '/:a/:c/:b';
+      const result = route.transfer(source, target);
+      expect(result).to.equal('/1/3/2');
     });
   });
 });

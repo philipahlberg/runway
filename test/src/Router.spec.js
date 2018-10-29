@@ -1,6 +1,5 @@
-import { Router } from './lib.js';
-
-const SimpleComponent = customElements.get('simple-component');
+import { Router } from '../../src/Router.ts';
+import { StaticComponent } from './StaticComponent.js';
 
 const div = () => document.createElement('div');
 
@@ -8,14 +7,14 @@ describe('Router', () => {
   describe('constructor', () => {
     it('converts records to routes', () => {
       const router = new Router([
-        { path: '/a', component: SimpleComponent }
+        { path: '/a', component: StaticComponent }
       ]);
       expect(router.routes).to.be.instanceof(Array);
     });
 
     it('does not render before `connect` has been called', () => {
       const router = new Router([
-        { path: '/', component: SimpleComponent }
+        { path: '/', component: StaticComponent }
       ]);
       expect(router.elements).to.be.empty;
     });
@@ -24,7 +23,7 @@ describe('Router', () => {
   describe('#connect', () => {
     it('connects the router to the DOM', async () => {
       const router = new Router([
-        { path: '/', component: SimpleComponent }
+        { path: '/', component: StaticComponent }
       ]);
 
       const outlet = div();
@@ -37,7 +36,7 @@ describe('Router', () => {
   describe('#disconnect', () => {
     it('removes the previously rendered views', async () => {
       const router = new Router([
-        { path: '/', component: SimpleComponent }
+        { path: '/', component: StaticComponent }
       ]);
 
       const outlet = div();
@@ -138,27 +137,27 @@ describe('Router', () => {
 
       const { matched } = router.match('/abc');
       expect(matched).to.have.lengthOf(2);
-    })
+    });
   });
 
   describe('#render', () => {
     it('renders a component', async () => {
       const router = new Router([
-        { path: '/', component: SimpleComponent }
+        { path: '/', component: StaticComponent }
       ]);
   
       const outlet = div();
       await router.connect(outlet);
       await router.push('/');
   
-      expect(outlet.firstChild).to.be.instanceof(SimpleComponent);
+      expect(outlet.firstChild).to.be.instanceof(StaticComponent);
     });
 
     it('resolves properties function as props', async () => {
       const router = new Router([
         {
           path: '/',
-          component: SimpleComponent,
+          component: StaticComponent,
           properties: () => ({ foo: 'bar' })
         }
       ]);
@@ -176,7 +175,7 @@ describe('Router', () => {
       const router = new Router([
         {
           path: '/:foo',
-          component: SimpleComponent,
+          component: StaticComponent,
           properties: route => route
         }
       ]);
@@ -205,10 +204,10 @@ describe('Router', () => {
     it('nests components from nested routes', async () => {
       const router = new Router([{
         path: '/',
-        component: SimpleComponent,
+        component: StaticComponent,
         children: [{
           path: ':param',
-          component: SimpleComponent
+          component: StaticComponent
         }]
       }]);
 
@@ -219,8 +218,8 @@ describe('Router', () => {
       const outer = outlet.firstChild;
       const inner = outer.firstChild;
 
-      expect(outer).to.be.instanceof(SimpleComponent);
-      expect(inner).to.be.instanceof(SimpleComponent);
+      expect(outer).to.be.instanceof(StaticComponent);
+      expect(inner).to.be.instanceof(StaticComponent);
     });
   });
 });

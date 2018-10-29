@@ -1,38 +1,27 @@
-const resolver = require('rollup-plugin-node-resolve');
-const typescript = require('rollup-plugin-typescript');
-const tsc = require('typescript');
-
-const rollup = {
-  output: {
-    format: 'es'
-  },
-  plugins: [
-    typescript({ typescript: tsc }),
-    resolver()
-  ]
-};
-
 module.exports = (config) => {
   config.set({
     basePath: '../',
-    frameworks: ['mocha', 'chai'],
-    files: [
-      { pattern: 'test/lib.js', type: 'module', watched: false },
-      { pattern: 'test/index.js', type: 'module', watched: false }
+    frameworks: [
+      'mocha',
+      'chai'
     ],
-    preprocessors: {
-      'test/lib.js': ['rollup'],
-      'test/index.js': ['rollup']
-    },
-    rollupPreprocessor: rollup,
-    browsers: ['ChromeHeadless', 'FirefoxHeadless', 'Edge'],
+    files: [
+      { pattern: 'test/dist/index.js', type: 'module' }
+    ],
+    browsers: [
+      'ChromeHeadless',
+      'FirefoxHeadless',
+      'Edge'
+    ],
     customLaunchers: {
       FirefoxHeadless: {
         base: 'Firefox',
         flags: ['-headless'],
       },
     },
-    reporters: ['progress'],
+    reporters: [
+      'dots'
+    ],
     port: 1234,
     colors: true,
     logLevel: config.LOG_WARN,

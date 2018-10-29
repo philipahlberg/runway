@@ -16,14 +16,18 @@
     "single-page application"
   ],
   "scripts": {
-    "start": "npm run test:watch",
     "dev": "npm run test:watch",
     "test": "karma start scripts/karma.prod.js",
     "test:watch": "karma start scripts/karma.dev.js",
-    "build": "rollup -c scripts/rollup.prod.js && tsc --emitDeclarationOnly",
+    "build": "npm run build:types && npm run build:prod",
+    "build:types": "tsc --emitDeclarationOnly",
+    "build:dev": "rollup -w -c scripts/rollup.dev.js",
+    "build:prod": "rollup -c scripts/rollup.prod.js",
     "lint": "eslint src",
     "format": "prettier",
-    "docs": "webpack-serve docs/webpack.js",
+    "docs": "npm run docs:build && npm run docs:serve",
+    "docs:build": "typedoc src/ --exclude \"**/constants.ts\" --out docs/",
+    "docs:serve": "http-server ./docs",
     "example": "node scripts/example.js"
   },
   "devDependencies": {
@@ -34,13 +38,14 @@
     "eslint-import-resolver-node": "^0.3.2",
     "eslint-plugin-import": "^2.9.0",
     "eslint-plugin-prettier": "^2.6.0",
+    "event-target-shim": "^3.0.2",
+    "http-server": "^0.11.1",
     "karma": "^2.0.0",
     "karma-chai": "^0.1.0",
     "karma-chrome-launcher": "^2.2.0",
     "karma-edge-launcher": "^0.4.2",
     "karma-firefox-launcher": "^1.1.0",
     "karma-mocha": "^1.3.0",
-    "karma-rollup-preprocessor": "^5.1.1",
     "koa": "^2.5.0",
     "koa-static": "^4.0.2",
     "mocha": "^5.0.4",
@@ -49,7 +54,10 @@
     "rollup-plugin-node-resolve": "^3.0.3",
     "rollup-plugin-typescript": "^0.8.1",
     "rollup-plugin-uglify": "^3.0.0",
+    "typedoc": "^0.11.1",
     "typescript": "^2.7.2"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@philipahlberg/expressionist": "^0.1.2"
+  }
 }

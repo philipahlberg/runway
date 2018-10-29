@@ -1,1 +1,0 @@
-customElements.define('simple-component', class extends HTMLElement {});
