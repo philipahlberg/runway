@@ -1,20 +1,6 @@
 import { Route } from './Route';
-import { decode } from './utils';
+import { decode, pushState, replaceState, popState } from './utils';
 import { RouteOptions, Component } from './types';
-
-const history = window.history;
-
-function pushState (path: string) {
-  history.pushState(history.state, '', path);
-}
-
-function replaceState (path: string) {
-  history.replaceState(history.state, '', path);
-}
-
-function popState (n: number = 1) {
-  history.go(n);
-}
 
 export interface SearchResult {
   matched: Route[];
