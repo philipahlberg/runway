@@ -1,3 +1,7 @@
+interface Element {
+  toggleAttribute(qualifiedName: string, force?: boolean): void;
+}
+
 interface HTMLElement {
   connectedCallback?(): void;
   disconnectedCallback?(): void;
