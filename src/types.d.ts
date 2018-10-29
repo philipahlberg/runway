@@ -1,3 +1,5 @@
+import { Route } from './Route';
+
 export interface ModuleDescriptor {
   default: Component;
   [key: string]: any;
@@ -44,4 +46,9 @@ export interface Snapshot {
   query: URLSearchParams;
   hash: string;
   matched: string;
+}
+
+export interface SearchResult {
+  routes: Route[];
+  path: string;
 }

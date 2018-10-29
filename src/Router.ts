@@ -1,11 +1,6 @@
 import { Route } from './Route';
 import { decode, pushState, replaceState, popState } from './utils';
-import { RouteOptions, Component } from './types';
-
-export interface SearchResult {
-  matched: Route[];
-  path: string;
-}
+import { RouteOptions, Component, SearchResult } from './types';
 
 export class Router extends EventTarget {
   isConnected: boolean;
@@ -33,9 +28,9 @@ export class Router extends EventTarget {
     this.isConnected = true;
     this.root = root;
     const to = decode(location.pathname);
-    const { matched, path } = this.match(to);
+    const { routes, path } = this.match(to);
     replaceState(path);
-    await this.render(matched);
+    await this.render(routes);
   }
 
   /**
@@ -53,13 +48,13 @@ export class Router extends EventTarget {
 
   private onPopstate(): void {
     const to = decode(location.pathname);
-    const { matched, path } = this.match(to);
+    const { routes, path } = this.match(to);
     // TODO: is this ever true?
     if (to !== path) {
       replaceState(path);
     }
     this.emit('change');
-    this.render(matched);
+    this.render(routes);
   }
 
   /**
@@ -67,10 +62,10 @@ export class Router extends EventTarget {
    */
   async push(to: string): Promise<void> {
     to = decode(to);
-    const { matched, path } = this.match(to);
+    const { routes, path } = this.match(to);
     pushState(path);
     this.emit('change');
-    await this.render(matched);
+    await this.render(routes);
   }
 
   /**
@@ -78,10 +73,10 @@ export class Router extends EventTarget {
    */
   async replace(to: string): Promise<void> {
     to = decode(to);
-    const { matched, path } = this.match(to);
+    const { routes, path } = this.match(to);
     replaceState(path);
     this.emit('change');
-    await this.render(matched);
+    await this.render(routes);
   }
 
   /**
@@ -93,11 +88,11 @@ export class Router extends EventTarget {
     popState(n);
   }
 
-  private search(path: string, routes: Route[], matched: Route[]): SearchResult {
-    const route = routes.find(r => r.matches(path) && r.guard());
+  private search(path: string, candidates: Route[], routes: Route[]): SearchResult {
+    const route = candidates.find(r => r.matches(path) && r.guard());
 
     if (route) {
-      matched.push(route);
+      routes.push(route);
       if (route.redirect) {
         // transfer any matched parameters
         const from = route.matched(path);
@@ -107,13 +102,13 @@ export class Router extends EventTarget {
         return this.search(redirected, this.routes, []);
       } else if (route.children) {
         // Search through the children
-        return this.search(path, route.children, matched);
+        return this.search(path, route.children, routes);
       } else {
-        return { matched, path };
+        return { routes, path };
       }
     } else {
       // End the search here
-      return { matched, path };
+      return { routes, path };
     }
   }
 
