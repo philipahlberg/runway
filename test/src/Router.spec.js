@@ -5,18 +5,11 @@ const div = () => document.createElement('div');
 
 describe('Router', () => {
   describe('constructor', () => {
-    it('converts records to routes', () => {
-      const router = new Router([
-        { path: '/a', component: StaticComponent }
-      ]);
-      expect(router.routes).to.be.instanceof(Array);
-    });
-
     it('does not render before `connect` has been called', () => {
       const router = new Router([
         { path: '/', component: StaticComponent }
       ]);
-      expect(router.elements).to.be.empty;
+      expect(router.isConnected).to.equal(false);
     });
   });
 
@@ -30,6 +23,7 @@ describe('Router', () => {
       await router.connect(outlet);
       const children = Array.from(outlet.children);
       expect(children).to.deep.equal(router.elements);
+      expect(router.isConnected).to.equal(true);
     });
   });
 
@@ -56,11 +50,11 @@ describe('Router', () => {
         { path: '/abc' }
       ]);
 
-      const { matched, path } = router.match('/a');
+      const { routes, path } = router.match('/a');
       expect(path).to.equal('/a');
-      expect(matched).to.be.an('array').that.has.length(1);
+      expect(routes).to.be.an('array').that.has.length(1);
 
-      const route = matched[0];
+      const route = routes[0];
       expect(route).to.have.property('path', '/a');
     });
 
@@ -70,11 +64,11 @@ describe('Router', () => {
         { path: '/abc' }
       ]);
 
-      const { matched, path } = router.match('/a?q=123');
+      const { routes, path } = router.match('/a?q=123');
       expect(path).to.equal('/a?q=123');
-      expect(matched).to.be.an('array').that.has.length(1);
+      expect(routes).to.be.an('array').that.has.length(1);
 
-      const route = matched[0];
+      const route = routes[0];
       expect(route).to.have.property('path', '/a');
     });
 
@@ -83,11 +77,11 @@ describe('Router', () => {
         { path: '/a' }
       ]);
 
-      const { matched, path } = router.match('/a#hash');
+      const { routes, path } = router.match('/a#hash');
       expect(path).to.equal('/a#hash');
-      expect(matched).to.be.an('array').that.has.length(1);
+      expect(routes).to.be.an('array').that.has.length(1);
 
-      const route = matched[0];
+      const route = routes[0];
       expect(route).to.have.property('path', '/a');
     });
 
@@ -96,11 +90,11 @@ describe('Router', () => {
         { path: '/a' }
       ]);
 
-      const { matched, path } = router.match('/a?q=123#hash');
+      const { routes, path } = router.match('/a?q=123#hash');
       expect(path).to.equal('/a?q=123#hash');
-      expect(matched).to.be.an('array').that.has.length(1);
+      expect(routes).to.be.an('array').that.has.length(1);
 
-      const route = matched[0];
+      const route = routes[0];
       expect(route).to.have.property('path', '/a');
     });
 
@@ -110,11 +104,11 @@ describe('Router', () => {
         { path: '/b' }
       ]);
 
-      const { matched, path } = router.match('/a');
+      const { routes, path } = router.match('/a');
       expect(path).to.equal('/b');
-      expect(matched).to.be.an('array').that.has.lengthOf(1);
+      expect(routes).to.be.an('array').that.has.lengthOf(1);
 
-      const route = matched[0];
+      const route = routes[0];
       expect(route).to.have.property('path', '/b');
     });
 
@@ -123,8 +117,8 @@ describe('Router', () => {
         { path: '/', guard: () => false }
       ]);
 
-      const { matched } = router.match('/');
-      expect(matched).to.have.lengthOf(0);
+      const { routes } = router.match('/');
+      expect(routes).to.have.lengthOf(0);
     });
 
     it('matches nested routes', () => {
@@ -135,8 +129,8 @@ describe('Router', () => {
         ]
       }]);
 
-      const { matched } = router.match('/abc');
-      expect(matched).to.have.lengthOf(2);
+      const { routes } = router.match('/abc');
+      expect(routes).to.have.lengthOf(2);
     });
   });
 
