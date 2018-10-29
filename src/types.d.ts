@@ -1,7 +1,7 @@
 import { Router } from './Router';
 
 export interface ModuleDescriptor {
-  default: any;
+  default: Component;
   [key: string]: any;
 }
 
@@ -43,7 +43,7 @@ export type RouteOptions = ComponentOptions | RedirectOptions;
 
 export interface Snapshot {
   parameters: Map<string, string>;
-  query: Map<string, string>;
+  query: URLSearchParams;
   hash: string;
   matched: string;
 }

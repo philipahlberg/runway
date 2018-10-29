@@ -1,10 +1,8 @@
 import { parse, compile, execute, map } from '@philipahlberg/expressionist';
-import { Query } from './Query';
 import { join, decode } from './utils';
 import {
   RouteOptions,
   RedirectOptions,
-  // RenderOptions,
   Component,
   GuardFn,
   PropertiesFn,
@@ -19,11 +17,6 @@ function createLoadFn(component: Component): LoadFn {
 function isRedirect(options: RouteOptions): options is RedirectOptions {
   return options.hasOwnProperty('redirect');
 }
-
-// function isRender(options: RouteOptions): options is RenderOptions {
-//   return options.hasOwnProperty('component') ||
-//     options.hasOwnProperty('load');
-// }
 
 export class Route {
   private static cache = new WeakMap<Route, Component>();
@@ -88,7 +81,7 @@ export class Route {
     search = decode(search);
     return {
       parameters: this.map(pathname),
-      query: Query.parse(search),
+      query: new URLSearchParams(search),
       matched: this.matched(pathname),
       hash: hash.substring(1)
     };

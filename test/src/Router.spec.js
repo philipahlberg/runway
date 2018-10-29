@@ -154,13 +154,11 @@ describe('Router', () => {
     });
 
     it('resolves properties function as props', async () => {
-      const router = new Router([
-        {
-          path: '/',
-          component: StaticComponent,
-          properties: () => ({ foo: 'bar' })
-        }
-      ]);
+      const router = new Router([{
+        path: '/',
+        component: StaticComponent,
+        properties: () => ({ foo: 'bar' })
+      }]);
 
       const outlet = div();
       await router.connect(outlet);
@@ -172,31 +170,24 @@ describe('Router', () => {
     });
 
     it('passes a route snapshot to the properties function', async () => {
-      const router = new Router([
-        {
-          path: '/:foo',
-          component: StaticComponent,
-          properties: route => route
-        }
-      ]);
+      let snapshot;
+      
+      const router = new Router([{
+        path: '/:foo',
+        component: StaticComponent,
+        properties: ss => (snapshot = ss, {})
+      }]);
 
       const outlet = div();
       await router.connect(outlet);
       await router.push('/bar?foo=bar#hash');
 
-      const component = outlet.firstChild;
+      const { parameters, query, matched, hash } = snapshot;
 
-      const { parameters, query, matched, hash } = component;
-
-      expect(parameters).to.be.an.instanceOf(Map);
       expect(parameters.get('foo')).to.equal('bar');
-
-      expect(query).to.be.an.instanceOf(Map);
       expect(query.get('foo')).to.equal('bar');
-
       expect(matched).to.be.a('string');
       expect(matched).to.equal('/bar');
-
       expect(hash).to.be.a('string');
       expect(hash).to.equal('hash');
     });
