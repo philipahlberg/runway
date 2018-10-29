@@ -58,7 +58,7 @@
     "rollup-plugin-uglify": "^3.0.0",
     "tslib": "^1.9.3",
     "typedoc": "^0.11.1",
-    "typescript": "^2.7.2"
+    "typescript": "^3.1.4"
   },
   "dependencies": {
     "@philipahlberg/expressionist": "^0.1.2"
