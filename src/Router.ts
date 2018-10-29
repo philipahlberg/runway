@@ -1,31 +1,40 @@
-import { EventEmitter } from './EventEmitter';
 import { Route } from './Route';
-import { History } from './History';
 import { decode } from './utils';
-import { Record, CustomElement, NavigationOptions } from './types';
+import { RouteOptions, Component } from './types';
+
+const history = window.history;
+
+function pushState (path: string) {
+  history.pushState(history.state, '', path);
+}
+
+function replaceState (path: string) {
+  history.replaceState(history.state, '', path);
+}
+
+function popState (n: number = 1) {
+  history.go(n);
+}
 
 export interface SearchResult {
   matched: Route[];
   path: string;
 }
 
-export class Router extends EventEmitter {
+export class Router extends EventTarget {
   isConnected: boolean;
-  history: History;
   routes: Route[];
   elements: HTMLElement[];
   activeRoutes: Route[];
   root?: HTMLElement;
 
-  constructor(records: Record[]) {
+  constructor(options: RouteOptions[]) {
     super();
     this.isConnected = false;
     this.elements = [];
     this.activeRoutes = [];
-    this.routes = records.map(record => new Route(record));
+    this.routes = options.map(option => new Route(option));
     this.onPopstate = this.onPopstate.bind(this);
-    this.history = new History();
-    this.history.on('pop', this.onPopstate);
   }
 
   /**
@@ -34,14 +43,13 @@ export class Router extends EventEmitter {
    * and renders those matched elements.
    */
   async connect(root: HTMLElement): Promise<void> {
+    window.addEventListener('popstate', this.onPopstate);
     this.isConnected = true;
     this.root = root;
     const to = decode(location.pathname);
     const { matched, path } = this.match(to);
-    this.history.connect();
-    this.history.replace(path);
+    replaceState(path);
     await this.render(matched);
-    this.emit('connect');
   }
 
   /**
@@ -50,42 +58,43 @@ export class Router extends EventEmitter {
    * removes all listeners, effectively leaving the router inactive.
    */
   disconnect(): void {
+    window.removeEventListener('popstate', this.onPopstate);
     this.isConnected = false;
     this.activeRoutes = [];
     this.root = undefined;
     this.teardown();
-    this.history.disconnect();
-    this.emit('disconnect');
   }
 
-  private onPopstate(to: string): void {
+  private onPopstate(): void {
+    const to = decode(location.pathname);
     const { matched, path } = this.match(to);
+    // TODO: is this ever true?
     if (to !== path) {
-      this.history.replace(path);
+      replaceState(path);
     }
-    this.emit('pop');
+    this.emit('change');
     this.render(matched);
   }
 
   /**
    * Push a history entry onto the stack.
    */
-  async push(to: string, options?: NavigationOptions): Promise<void> {
+  async push(to: string): Promise<void> {
     to = decode(to);
     const { matched, path } = this.match(to);
-    this.history.push(path, options);
-    this.emit('push');
+    pushState(path);
+    this.emit('change');
     await this.render(matched);
   }
 
   /**
    * Replace the topmost entry in the history stack.
    */
-  async replace(to: string, options?: NavigationOptions): Promise<void> {
+  async replace(to: string): Promise<void> {
     to = decode(to);
     const { matched, path } = this.match(to);
-    this.history.replace(path, options);
-    this.emit('replace');
+    replaceState(path);
+    this.emit('change');
     await this.render(matched);
   }
 
@@ -93,8 +102,9 @@ export class Router extends EventEmitter {
    * Pop the top `n` entries off of history stack.
    */
   pop(n: number = 1) {
-    // triggers onpop(), so no need to render here
-    this.history.pop(n);
+    // triggers a popstate event, so rendering
+    // happens in this.onPopstate.
+    popState(n);
   }
 
   private search(path: string, routes: Route[], matched: Route[]): SearchResult {
@@ -135,7 +145,7 @@ export class Router extends EventEmitter {
    * The routes are assumed to be nested.
    */
   private async render(matchedRoutes: Route[]) {
-    if (this.root == undefined) {
+    if (this.root == null) {
       return;
     }
 
@@ -170,7 +180,7 @@ export class Router extends EventEmitter {
     // Create the new elements
     const additions = components
       .slice(startIndex)
-      .map((Component: CustomElement) => new Component());
+      .map((Component: Component) => new Component());
 
     this.elements = this.elements.concat(additions);
 
@@ -206,8 +216,6 @@ export class Router extends EventEmitter {
         this.root.appendChild(this.elements[0]);
       }
     }
-
-    this.emit('render');
   }
 
   /**
@@ -218,7 +226,7 @@ export class Router extends EventEmitter {
       const element = this.elements[i];
       const route = this.activeRoutes[i];
       const snapshot = route.snapshot(window.location);
-      const properties = route.properties(snapshot);
+      const properties = (route.properties!)(snapshot);
       const keys = Object.keys(properties);
       for (const key of keys) {
         element[key] = properties[key];
@@ -239,6 +247,10 @@ export class Router extends EventEmitter {
         element.parentElement.removeChild(element!);
       }
     }
+  }
+
+  private emit(type: string) {
+    this.dispatchEvent(new Event(type));
   }
 }
 

@@ -2,72 +2,84 @@ import { parse, compile, execute, map } from '@philipahlberg/expressionist';
 import { Query } from './Query';
 import { join, decode } from './utils';
 import {
+  RouteOptions,
+  RedirectOptions,
+  // RenderOptions,
   Component,
   GuardFn,
   PropertiesFn,
-  Record,
-  Snapshot,
-  Module,
-  CustomElement
+  LoadFn,
+  Snapshot
 } from './types';
 
+function createLoadFn(component: Component): LoadFn {
+  return () => Promise.resolve({ default: component });
+}
+
+function isRedirect(options: RouteOptions): options is RedirectOptions {
+  return options.hasOwnProperty('redirect');
+}
+
+// function isRender(options: RouteOptions): options is RenderOptions {
+//   return options.hasOwnProperty('component') ||
+//     options.hasOwnProperty('load');
+// }
+
 export class Route {
-  private static cache = new WeakMap<any, CustomElement>();
+  private static cache = new WeakMap<Route, Component>();
   private keys: string[];
   private pattern: RegExp;
   path: string;
   exact: boolean;
-  component: Component;
-  redirect?: string;
-  slot?: string;
   guard: GuardFn;
-  properties: PropertiesFn;
-  children: Route[];
+  redirect?: string;
+  component?: Component;
+  load?: LoadFn;
+  properties?: PropertiesFn;
+  slot?: string;
+  children?: Route[];
 
-  constructor(record: Record) {
-    let { path, component, exact,
-      redirect, slot, guard,
-      properties, children } = record;
+  constructor(options: RouteOptions) {
+    this.path = options.path;
+    this.guard = options.guard || (() => true);
+    this.keys = parse(options.path);
 
-    // Path should be exact if the route
-    // does not have any children,
-    // but only if the record does not
-    // specify anything
-    if (exact == null) {
-      exact = children == null ||
-        children.length === 0;
+    if (isRedirect(options)) {
+      this.exact = !!options.exact;
+      this.redirect = options.redirect;
+    } else {
+      this.exact = options.exact != null
+        ? options.exact
+        : options.children == null;
+
+      this.slot = options.slot;
+
+      if (options.load != null) {
+        this.load = options.load;
+      } else {
+        this.load = createLoadFn(options.component!);
+        this.component = options.component;
+      }
+
+      this.children = (options.children || [])
+        .map(child => createChildRoute(child, this));
+
+      this.properties = options.properties || (() => ({}));
     }
 
-    this.keys = parse(path);
-    this.pattern = compile(path, exact);
-    this.path = path;
-    this.exact = exact;
-    this.redirect = redirect;
-    this.component = typeof component === 'string'
-      ? customElements.get(component)
-      : component;
-    this.slot = slot;
-    this.guard = guard || (() => true);
-    this.properties = properties || (() => ({}));
-    this.children = (children || []).map(child =>
-      createChildRoute(child, this)
-    );
+    this.pattern = compile(this.path, this.exact);
   }
 
-  async import(): Promise<CustomElement> {
+  async import(): Promise<Component> {
     const cache = Route.cache;
-    const component = this.component;
-
-    if (isHTMLElement(component)) {
+    let component = cache.get(this);
+    if (component === undefined) {
+      const module = await (this.load!)();
+      component = module.default;
+      cache.set(this, component);
       return component;
-    } else if (cache.has(component)) {
-      return cache.get(component)!;
-    } else {
-      const res = await (this.component as () => Module)();
-      const ctor = res.default as CustomElement;
-      cache.set(component, ctor);
-      return ctor;
     }
+    return component;
   }
 
   snapshot(source: Location | URL): Snapshot {
@@ -108,18 +120,14 @@ export class Route {
   }
 }
 
-function createChildRoute(record: Record, parent: Route): Route {
-  if (record.path === '') {
-    record.path = parent.path;
+function createChildRoute(options: RouteOptions, parent: Route): Route {
+  if (options.path === '') {
+    options.path = parent.path;
   } else {
-    record.path = join(parent.path, record.path);
+    options.path = join(parent.path, options.path);
   }
-  if (record.redirect != null) {
-    record.redirect = join(parent.path, record.redirect);
+  if (isRedirect(options)) {
+    options.redirect = join(parent.path, options.redirect);
   }
-  return new Route(record);
-}
-
-function isHTMLElement(o: any): o is CustomElement {
-  return HTMLElement.isPrototypeOf(o);
+  return new Route(options);
 }

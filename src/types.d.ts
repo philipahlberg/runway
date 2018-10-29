@@ -1,29 +1,45 @@
 import { Router } from './Router';
 
-export type Module = PromiseLike<ModuleDescriptor>;
-
 export interface ModuleDescriptor {
   default: any;
   [key: string]: any;
 }
 
-export type Tuple<T> = [T, T];
+export type Module = PromiseLike<ModuleDescriptor>;
+
 export type Dictionary<T> = { [key: string]: T };
-export type ModuleFn = () => Module;
-export type Component = HTMLElement | ModuleFn;
+
+export interface Constructor<T> {
+  new (...args: any[]): T;
+}
+
+export type Component = Constructor<HTMLElement>;
+
+export type LoadFn = () => Module;
+
 export type GuardFn = () => boolean;
+
 export type PropertiesFn = (snapshot: Snapshot) => Dictionary<any>;
 
-export interface Record {
+export interface RedirectOptions {
   path: string;
-  component?: Component | string;
   exact?: boolean;
-  redirect?: string;
-  slot?: string;
   guard?: GuardFn;
-  properties?: PropertiesFn;
-  children?: Record[];
+  redirect: string;
 }
+
+export interface ComponentOptions {
+  path: string;
+  exact?: boolean;
+  guard?: GuardFn;
+  component?: Component;
+  load?: LoadFn;
+  slot?: string;
+  properties?: PropertiesFn;
+  children?: RouteOptions[];
+}
+
+export type RouteOptions = ComponentOptions | RedirectOptions;
 
 export interface Snapshot {
   parameters: Map<string, string>;
@@ -31,21 +47,6 @@ export interface Snapshot {
   hash: string;
   matched: string;
 }
-
-export interface Constructor<T> {
-  new (...args: any[]): T;
-}
-
-export type CustomElement = Constructor<HTMLElement>;
-
-export interface NavigationOptions {
-  data?: any;
-  title?: string;
-}
-
-export type PopstateListener = (to: string) => void;
-
-export type EventEmitterListener = (detail?: any) => void;
 
 export type URI = { pathname: string, search: string, hash: string };
 

@@ -4,13 +4,10 @@ import { RouterLinkOptions } from './types';
 
 export class RouterLink extends HTMLElement {
   static observedAttributes = ['disabled', 'to'];
-  static tagName: string;
   private static router: Router;
 
-  static define(tagName = 'router-link', options: RouterLinkOptions) {
-    this.tagName = tagName;
-    this.router = options.router;
-    customElements.define(tagName, this);
+  static use(router: Router) {
+    this.router = router;
   }
 
   constructor() {
@@ -19,12 +16,16 @@ export class RouterLink extends HTMLElement {
     this.onChange = this.onChange.bind(this);
   }
 
-  set to(v: string) {
-    this.setAttribute('to', v);
+  set to(v: string | null) {
+    if (v !== null) {
+      this.setAttribute('to', v);
+    } else {
+      this.removeAttribute('to');
+    }
   }
 
-  get to() {
-    return this.getAttribute('to') as string;
+  get to(): string | null {
+    return this.getAttribute('to');
   }
 
   set exact(v: boolean) {
@@ -52,7 +53,7 @@ export class RouterLink extends HTMLElement {
     return this.hasAttribute('disabled');
   }
 
-  get router(): Router {
+  private get router(): Router {
     return RouterLink.router;
   }
 
@@ -65,14 +66,14 @@ export class RouterLink extends HTMLElement {
       const hasValue = newValue != null;
       if (hasValue) {
         this.active = false;
-        this.router.off('render', this.onChange);
+        this.router.addEventListener('change', this.onChange);
       } else {
-        this.router.on('render', this.onChange);
+        this.router.removeEventListener('change', this.onChange);
         this.onChange();
       }
     } else if (attr === 'to') {
       const a = this.querySelector('a');
-      if (a) {
+      if (a !== null) {
         a.href = newValue;
       }
       this.active = this.test(decode(location.pathname));
@@ -81,37 +82,27 @@ export class RouterLink extends HTMLElement {
 
   connectedCallback() {
     const a = this.querySelector('a');
-    if (a) {
-      if (!this.to) {
+    if (a !== null) {
+      if (this.to === null) {
         this.to = decode(a.pathname);
       } else {
         a.href = this.to;
       }
     }
     this.addEventListener('click', this.onClick);
-    this.router.on('render', this.onChange);
+    this.router.addEventListener('change', this.onChange);
     this.onChange();
   }
 
   disconnectedCallback() {
     this.removeEventListener('click', this.onClick);
-    this.router.off('render', this.onChange);
-  }
-
-  toggleAttribute(name: string, predicate: boolean) {
-    if (predicate != null) {
-      if (predicate) {
-        this.setAttribute(name, '');
-      } else {
-        this.removeAttribute(name);
-      }
-    } else {
-      this.toggleAttribute(name, !this.hasAttribute(name));
-    }
+    this.router.removeEventListener('change', this.onChange);
   }
 
   test(path: string): boolean {
     const to = this.to;
+    if (to === null) return false;
+
     if (to.startsWith('/')) {
       return this.exact
         ? path === to
@@ -131,14 +122,14 @@ export class RouterLink extends HTMLElement {
       // Ignore prevented clicks
       event.defaultPrevented ||
       // Ignore right mouse button clicks
-      (event.button !== undefined &&
-      event.button !== 0)
+      event.button !== 0
     ) {
       return;
     }
 
     event.preventDefault();
-    if (this.disabled || !this.to) {
+
+    if (this.disabled || this.to === null) {
       return;
     } else {
       this.router.push(this.to);
