@@ -1,11 +1,15 @@
 {
+  "files": [
+    "src/index.ts",
+    "src/globals.d.ts"
+  ],
   "compilerOptions": {
+    "outDir": "./dist",
     "target": "es2017",
     "module": "esnext",
     "lib": ["es2017", "dom"],
     "moduleResolution": "node",
     "declaration": true,
-    "outDir": "./dist",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

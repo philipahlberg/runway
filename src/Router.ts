@@ -46,17 +46,6 @@ export class Router extends EventTarget {
     this.teardown();
   }
 
-  private onPopstate(): void {
-    const to = decode(location.pathname);
-    const { routes, path } = this.match(to);
-    // TODO: is this ever true?
-    if (to !== path) {
-      replaceState(path);
-    }
-    this.emit('change');
-    this.render(routes);
-  }
-
   /**
    * Push a history entry onto the stack.
    */
@@ -86,6 +75,17 @@ export class Router extends EventTarget {
     // triggers a popstate event, so rendering
     // happens in this.onPopstate.
     popState(n);
+  }
+
+  private onPopstate(): void {
+    const to = decode(location.pathname);
+    const { routes, path } = this.match(to);
+    // TODO: is this ever true?
+    if (to !== path) {
+      replaceState(path);
+    }
+    this.emit('change');
+    this.render(routes);
   }
 
   private search(path: string, candidates: Route[], routes: Route[]): SearchResult {
