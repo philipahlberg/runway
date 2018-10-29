@@ -1,5 +1,3 @@
-import { Router } from './Router';
-
 export interface ModuleDescriptor {
   default: Component;
   [key: string]: any;
@@ -46,10 +44,4 @@ export interface Snapshot {
   query: URLSearchParams;
   hash: string;
   matched: string;
-}
-
-export type URI = { pathname: string, search: string, hash: string };
-
-export interface RouterLinkOptions {
-  router: Router;
 }

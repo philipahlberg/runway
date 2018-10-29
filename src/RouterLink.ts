@@ -1,6 +1,5 @@
 import { Router } from './Router';
 import { decode } from './utils';
-import { RouterLinkOptions } from './types';
 
 export class RouterLink extends HTMLElement {
   static observedAttributes = ['disabled', 'to'];
