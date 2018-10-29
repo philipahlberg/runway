@@ -14,5 +14,5 @@ export default {
     }),
     resolve()
   ],
-  experimentalDynamicImport: true
+  inlineDynamicImports: true
 }
