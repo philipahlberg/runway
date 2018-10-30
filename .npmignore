@@ -1,8 +1,0 @@
-src
-test
-scripts
-.eslintrc.yaml
-.prettierrc
-rollup.config.js
-tsconfig.json
-tslint.json
