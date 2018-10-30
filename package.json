@@ -28,7 +28,7 @@
     "lint": "eslint src",
     "format": "prettier",
     "docs": "npm run docs:build && npm run docs:serve",
-    "docs:build": "typedoc src/ --exclude \"**/constants.ts\" --out docs/",
+    "docs:build": "typedoc src/ --out docs/",
     "docs:serve": "http-server ./docs",
     "example": "node scripts/example.js"
   },
