@@ -1,6 +1,10 @@
 export default class Admin extends HTMLElement {
-  connectedCallback() {
+  constructor() {
+    super();
     this.attachShadow({ mode: 'open' });
+  }
+
+  connectedCallback() {
     this.shadowRoot.innerHTML = `
       <style>
       :host {

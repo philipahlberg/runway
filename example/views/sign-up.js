@@ -1,9 +1,13 @@
-import router from '/routes.js';
-import { signup, signin } from '../auth.js';
+import router from '/router.js';
+import api from '/api.js';
 
 export default class SignUp extends HTMLElement {
-  connectedCallback() {
+  constructor() {
+    super();
     this.attachShadow({ mode: 'open' });
+  }
+
+  connectedCallback() {
     this.shadowRoot.innerHTML = `
       <style>
       :host {
@@ -32,8 +36,8 @@ export default class SignUp extends HTMLElement {
   onSubmit(event) {
     event.preventDefault();
     const { name, password } = event.target.elements;
-    signup(name.value, password.value);
-    signin(name.value, password.value);
+    api.signUp(name.value, password.value);
+    api.signIn(name.value, password.value);
     router.push('/admin');
   }
 }

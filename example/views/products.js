@@ -1,22 +1,17 @@
+import api from '/api.js';
+
+const createLink = ({ id, name }) => `
+  <router-link to="/products/${id}"><a>${name}</a></router-link>
+`;
+
 export default class Products extends HTMLElement {
-  connectedCallback() {
-    const a = (href, name) => `<router-link><a href="${href}">${name}</a></router-link>`;
-
-    const products = [
-      {
-        id: 1,
-        name: 'A'
-      },
-      {
-        id: 2,
-        name: 'B'
-      }
-    ].reduce(
-      (html, {id, name}) => html += a(`/products/${id}`, name),
-      ''
-    );
-
+  constructor() {
+    super();
     this.attachShadow({ mode: 'open' });
+    this.render = this.render.bind(this);
+  }
+
+  connectedCallback() {
     this.shadowRoot.innerHTML = `
       <style>
       :host {
@@ -29,9 +24,25 @@ export default class Products extends HTMLElement {
       }
       </style>
       <h1>Products</h1>
-      ${products}
+      <router-link to="/products/new">
+        <a>New</a>
+      </router-link>
+      <div id="products"></div>
       <slot></slot>
     `;
+
+    api.addEventListener('add-product', this.render);
+    this.render();
+  }
+
+  disconnectedCallback() {
+    api.removeEventListener('add-product', this.render);
+  }
+
+  render() {
+    const products = api.getProducts();
+    const links = products.map(createLink).join('');
+    this.shadowRoot.querySelector('#products').innerHTML = links;
   }
 }
 

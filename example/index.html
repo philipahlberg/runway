@@ -3,18 +3,22 @@
   <head>
     <meta charset="utf-8">
     <title>Router</title>
-    <script type="module" src="/index.js"></script>
+    <script type="module" src="/router.js"></script>
     <style>
       body {
         margin: 0;
-        font-family: 'Segoe UI', Roboto, Oxygen, 'Open Sans', 'Helvetica Neue', sans-serif;
+        font-family: 'Segoe UI', 'Roboto', 'Oxygen', 'Open Sans', 'Helvetica Neue', sans-serif;
         font-size: 14px;
         box-sizing: border-box;
       }
 
+      router-link a {
+        color: #2979FF;
+      }
+
       router-link[active],
-      router-link[active] > a {
-        color: green;
+      router-link[active] a {
+        color: #4CAF50;
       }
     </style>
   </head>
@@ -22,10 +26,10 @@
     <router-link to="/dashboard">
       <a>Dashboard</a>
     </router-link>
-    <router-link to="/signin">
+    <router-link to="/sign-in">
       <a>Sign In</a>
     </router-link>
-    <router-link to="/signup">
+    <router-link to="/sign-up">
       <a>Sign Up</a>
     </router-link>
     <router-link to="/admin">

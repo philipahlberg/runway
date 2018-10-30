@@ -1,15 +1,13 @@
+import api from '/api.js';
+
 export default class Dashboard extends HTMLElement {
-  static get properties() {
-    return {
-      user: {
-        type: Object
-      }
-    }
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
   }
 
   connectedCallback() {
-    this.attachShadow({ mode: 'open' });
-    const user = this.user;
+    const user = api.getUser();
 
     this.shadowRoot.innerHTML = `
       <style>

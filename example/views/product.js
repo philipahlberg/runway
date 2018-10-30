@@ -1,25 +1,20 @@
-export default class Product extends HTMLElement {
-  static get properties() {
-    return {
-      product_id: {
-        type: String
-      }
-    }
-  }
+import api from '/api.js';
 
+export default class Product extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
   }
 
-  set product_id(value) {
-    this._id = value;
+  set productId(id) {
+    this._id = id;
+    this.product = api.getProduct(id);
     if (this.isConnected) {
       this.render();
     }
   }
 
-  get product_id() {
+  get productId() {
     return this._id;
   }
 
@@ -40,7 +35,10 @@ export default class Product extends HTMLElement {
   }
 
   render() {
-    this.content.textContent = `ID: ${this.product_id}`;
+    this.content.textContent = `
+      ID: ${this.product.id}
+      Name: ${this.product.name}
+    `;
   }
 }
 

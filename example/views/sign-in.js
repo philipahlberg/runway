@@ -1,9 +1,13 @@
-import router from '/routes.js';
-import { signin } from '/auth.js';
+import router from '/router.js';
+import api from '/api.js';
 
 export default class SignIn extends HTMLElement {
-  connectedCallback() {
+  constructor() {
+    super();
     this.attachShadow({ mode: 'open' });
+  }
+
+  connectedCallback() {
     this.shadowRoot.innerHTML = `
       <style>
       :host {
@@ -32,7 +36,7 @@ export default class SignIn extends HTMLElement {
   onSubmit(event) {
     event.preventDefault();
     const { name, password } = event.target.elements;
-    let success = signin(name.value, password.value);
+    const success = api.signIn(name.value, password.value);
     if (success) {
       router.push('/admin');
     }
