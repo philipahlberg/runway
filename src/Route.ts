@@ -38,7 +38,7 @@ export class Route {
     this.keys = parse(options.path);
 
     if (isRedirect(options)) {
-      this.exact = !!options.exact;
+      this.exact = true;
       this.redirect = options.redirect;
     } else {
       this.exact = options.exact != null
