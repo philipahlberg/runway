@@ -31,6 +31,7 @@ export class Router extends EventTarget {
     const { routes, path } = this.match(to);
     replaceState(path);
     await this.render(routes);
+    this.emit('change');
   }
 
   /**
