@@ -1,5 +1,5 @@
 # Runway
-A modern router for building single-page applications with web components.
+A modern, framework-agnostic router for building single-page applications with web components.
 
 ## Warning
 Runway has not reached 1.0 yet, and so the API is unstable. Expect breaking changes between minor versions until 1.0.
@@ -30,9 +30,8 @@ router.connect(document.body);
 ```
 To visit `'/foo'`, you can:
 
-  1) Call `router.push('/foo')` (or `router.replace('/foo')`)
-  2) Use a `<router-link>` in the DOM, and click it
-
+  1) Call `router.push` or `router.replace`
+  2) Click on a `<router-link>` element
 
 If you need your route to match a pattern instead of a path, you can use Express-like named parameters in the path:
 ```js
@@ -43,40 +42,22 @@ const router = new Router([
   }
 ]);
 ```
-Then, if the associated component has a static `properties` object, and it contains a key matching the parameters name, the value of the parameter in the path will automatically be passed to the component:
-```js
-// somewhere-else.js
-router.push('/foo');
 
-// my-component.js
-class Component extends HTMLElement {
-  static get properties() {
-    return {
-      param: String // or param: { /* ... */ }
-    }
-  }
-
-  connectedCallback() {
-    console.log(this.param === 'foo'); // true
-  }
-}
-```
-
-If you need to pass another value, like the hash or the query of the current location, you can use a `properties` function to do so:
+When using a named parameter, you can access the value by utilizing the `properties` function option:
 ```js
 const router = new Router([
   {
-    path: '/login',
-    component: LoginComponent,
-    properties: (route) => ({
-      foo: route.query.get('foo')
+    path: '/:param',
+    component: Component,
+    properties: ({ parameters }) => ({
+      myProp: parameters.get('param')
     })
   }
 ]);
 ```
-
-Here, the components' `foo` property will be passed the value of the corresponding query (i. e. if the query is `?foo=bar`, the value will be `bar`). 
-Note, however, that this will only be updated whenever navigation occurs (via `router.push`/`router.replace` or navigating with the browser's back/forward buttons).
+In this example, when an instance of `Component` is created, the property `myProp` is set onthe instance with the value of the `param` parameter.
+If the user visited `/foo`, the value of `parameters.get('foo')` would be `foo`.
+The `properties` function also receives other key details of the activated route, like a map of the search parameters (the part after the `?`).
 
 A route can also redirect to another path instead of rendering a component:
 ```js
@@ -91,10 +72,9 @@ const router = new Router([
   }
 ]);
 ```
-Then, if the user visits `/foo`, they will automatically be redirected to `/bar` and the corresponding routes will be rendered instead.
+Then, if the user visits `/foo`, they will automatically be redirected to `/bar` and the corresponding route will be rendered instead.
 
-Routes can be nested inside eachother, so that components are nested when rendered.
-Given a configuration like so:
+Routes can be nested inside eachother, so that components are nested when rendered:
 ```js
 const router = new Router([
   {
@@ -109,7 +89,7 @@ const router = new Router([
   }
 ]);
 ```
-and the user visits /foo/bar, the components will be rendered like so:
+When the user visits `/foo/bar`, the components will be rendered like so:
 ```html
 <component-a>
   <component-b>
@@ -147,25 +127,28 @@ Exported as `Router` and `default`.
 - **disconnect(): void**
 
   Disconnect the router from the DOM.
-- **push(path: string, options?: Options): Promise\<void>**
+- **push(path: string): Promise\<void>**
 
   Push a new entry onto the history stack. Resolves once every component has been loaded and connected.
-- **replace(path: string, options?: Options): Promise\<void>**
+- **replace(path: string): Promise\<void>**
 
   Replace the current entry in the history stack.
-- **go(entries: number): void**
+- **pop(n: number): void**
 
-  Traverse the history stack.
+  Pop the top `n` entries in the history stack.
 
-### `interface Record`
+### `interface RouteOptions`
 - **path: string**
 
   This is the path that the route should match.
   Use named parameters (`/:parameter`) to match dynamic values and pass them to the component as properties, or use a wildcard (`**`) to match anything.
-- **component?: HTMLElement | Promise<{ default: HTMLElement }> | string**
+- **component?: HTMLElement**
 
-  The component that should be rendered.
-  Use the component's class declaration for eagerly-loaded components, or pass a function that returns a Promise (like `() => import('./component.js`) to lazy-load the component when the route matches the first time. Note that the component needs to be the default export of the module when using `import()`.
+  The constructor for the component that should be rendered.
+- **load?: () => PromiseLike<{ default: HTMLElement }>**
+
+  Use `load` instead of `component` to lazy-load the component when the route matches for the first time.
+  Note that the component needs to be the default export of the module when using `import()`.
 - **exact?: boolean**
 
   Whether or not the route should match "exactly"; `{ path: '/', exact: false }` would match any path (because any path begins with '/') while `{ path: '/' exact: true }` would *only* match '/'.
@@ -178,37 +161,14 @@ Exported as `Router` and `default`.
   Render the component in a specific slot.
 - **guard?: () => boolean**
 
-  A function that allows selective matching; returning `false` means the route will be skipped.
+  A function that allows selective matching; returning `false` means the route will be skipped when it would otherwise have matched.
 - **properties?: (snapshot: Snapshot) => { [key: string]: string }**
 
   `properties` allows certain route-specific properties to be passed to the component. The snapshot contains information such as the parameters from the route, the matched path, the query and the hash.
-- **children?: Record[]**
+- **children?: RouteOptions[]**
 
-  An array of records. The paths of these nested records are appended to the parent record; Given `{ path: '/', children: [{ path: 'abc' }] }`, the path '/abc' would mean that both routes activate while the path '/' would mean that the topmost route activates.
+  An array of options. The paths of these nested options are appended to the parent option; given `{ path: '/', children: [{ path: 'abc' }] }`, the path `/abc` would cause both routes to activate while the path `/` would cause only the topmost route to activate.
 
-### `class Parameters extends Map<string, string>`
-A mapping of parameter names to resolved parameter values in the given path.
-Use `Map`'s built in methods to access the values.
-- **path: string**
-- **all(): { [key: string]: string }**
-
-  Converts the entries in the map into a simple object, where the keys are the parameter names and the values are their resolves values.
-
-### `class Query extends Map<string, string>`
-Exported as `Query`.
-A generic class for working with queries (the `?key=value` bit).
-- **static from(object: { [key: string]: string }): Query**
-
-  Construct a Query from a simple object.
-- **static parse(string: string): Query**
-
-  Construct a Query from a string.
-- **all(): { [key: string]: string }**
-
-  Convert the Query to a simple object.
-- **toString(): string**
-
-  Convert the Query to a query-string, suitable for using directly in a path.
 
 ### `<router-link>`
 Exported as `RouterLink`. Use `RouterLink.install()` to define the element.
@@ -240,7 +200,7 @@ If you're changing the target of the link during it's lifetime (e.g. if you're u
 ```
 
 ## Browser support
-Runway is tested against the latest version of Chrome, Firefox and Edge.
+Runway is tested against the latest version of Chrome and Firefox.
 
 ## Contributing
 
