@@ -32,5 +32,5 @@ export function replaceState(path: string) {
 }
 
 export function popState(n: number = 1) {
-  history.go(n);
+  history.go(-n);
 }
