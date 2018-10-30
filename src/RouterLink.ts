@@ -62,35 +62,29 @@ export class RouterLink extends HTMLElement {
     }
 
     if (attr === 'disabled') {
-      const hasValue = newValue != null;
-      if (hasValue) {
+      if (newValue != null) {
         this.active = false;
-        this.router.addEventListener('change', this.onChange);
       } else {
-        this.router.removeEventListener('change', this.onChange);
         this.onChange();
       }
     } else if (attr === 'to') {
       const a = this.querySelector('a');
       if (a !== null) {
-        a.href = newValue;
+        a.setAttribute('href', newValue);
       }
-      this.active = this.test(decode(location.pathname));
+      this.onChange();
     }
   }
 
   connectedCallback() {
-    const a = this.querySelector('a');
-    if (a !== null) {
-      if (this.to === null) {
+    if (this.to === null) {
+      const a = this.querySelector('a');
+      if (a !== null) {
         this.to = decode(a.pathname);
-      } else {
-        a.href = this.to;
       }
     }
     this.addEventListener('click', this.onClick);
     this.router.addEventListener('change', this.onChange);
-    this.onChange();
   }
 
   disconnectedCallback() {
@@ -136,6 +130,7 @@ export class RouterLink extends HTMLElement {
   }
 
   onChange() {
+    if (this.disabled) return;
     this.active = this.test(decode(location.pathname));
   }
 }
