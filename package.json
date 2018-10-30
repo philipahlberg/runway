@@ -7,6 +7,9 @@
   "repository": "https://github.com/philipahlberg/runway.git",
   "author": "philipahlberg <23071488+philipahlberg@users.noreply.github.com>",
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "keywords": [
     "router",
     "routing",
