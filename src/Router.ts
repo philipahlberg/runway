@@ -91,9 +91,9 @@ export class Router extends EventTarget {
   private search(path: string, candidates: Route[], routes: Route[]): SearchResult {
     const route = candidates.find(r => r.matches(path) && r.guard());
 
-    if (route) {
+    if (route !== undefined) {
       routes.push(route);
-      if (route.redirect) {
+      if (route.redirect !== undefined) {
         // transfer any matched parameters
         const from = route.matched(path);
         const to = route.redirect;
