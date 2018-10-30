@@ -1,6 +1,5 @@
 import resolve from 'rollup-plugin-node-resolve';
 import typescript from 'rollup-plugin-typescript';
-import tsc from 'typescript';
 
 export default {
   input: './test/src/index.js',
@@ -9,9 +8,7 @@ export default {
     format: 'es'
   },
   plugins: [
-    typescript({
-      typescript: tsc
-    }),
+    typescript(),
     resolve()
   ],
   inlineDynamicImports: true

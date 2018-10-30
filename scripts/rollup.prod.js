@@ -1,7 +1,6 @@
 import resolve from 'rollup-plugin-node-resolve';
-import minify from 'rollup-plugin-uglify';
+import { terser } from 'rollup-plugin-terser';
 import typescript from 'rollup-plugin-typescript';
-import tsc from 'typescript';
 
 export default [
   {
@@ -11,9 +10,7 @@ export default [
       format: 'es'
     },
     plugins: [
-      typescript({
-        typescript: tsc
-      }),
+      typescript(),
       resolve()
     ]
   },
@@ -25,12 +22,11 @@ export default [
       sourcemap: true
     },
     plugins: [
-      typescript({
-        typescript: tsc
-      }),
+      typescript(),
       resolve(),
-      minify({
-        toplevel: true
+      terser({
+        ecma: 8,
+        module: true
       })
     ]
   }
