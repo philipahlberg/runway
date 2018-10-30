@@ -10,8 +10,7 @@ module.exports = (config) => {
     ],
     browsers: [
       'ChromeHeadless',
-      'FirefoxHeadless',
-      'Edge'
+      'FirefoxHeadless'
     ],
     customLaunchers: {
       FirefoxHeadless: {
