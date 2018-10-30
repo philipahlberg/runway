@@ -26,9 +26,6 @@ module.exports = (config) => {
     colors: true,
     logLevel: config.LOG_WARN,
     autoWatch: false,
-    singleRun: true,
-    // https://github.com/karma-runner/karma/pull/2834#issuecomment-376854730
-    customContextFile: 'test/context.html',
-    customDebugFile: 'test/debug.html'
+    singleRun: true
   });
 };
