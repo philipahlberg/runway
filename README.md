@@ -30,8 +30,8 @@ router.connect(document.body);
 ```
 To visit `'/foo'`, you can:
 
-  1) Call `router.push` or `router.replace`
-  2) Click on a `<router-link>` element
+  1) Call `router.push('/foo')` or `router.replace('/foo')`
+  2) Click on a `<router-link to="/foo">` element
 
 If you need your route to match a pattern instead of a path, you can use Express-like named parameters in the path:
 ```js
@@ -57,7 +57,7 @@ const router = new Router([
 ```
 In this example, when an instance of `Component` is created, the property `myProp` is set onthe instance with the value of the `param` parameter.
 If the user visited `/foo`, the value of `parameters.get('foo')` would be `foo`.
-The `properties` function also receives other key details of the activated route, like a map of the search parameters (the part after the `?`).
+The `properties` function also receives other key details of the activated route, including a map of the search parameters (the part after the `?`).
 
 A route can also redirect to another path instead of rendering a component:
 ```js
@@ -167,37 +167,63 @@ Exported as `Router` and `default`.
   `properties` allows certain route-specific properties to be passed to the component. The snapshot contains information such as the parameters from the route, the matched path, the query and the hash.
 - **children?: RouteOptions[]**
 
-  An array of options. The paths of these nested options are appended to the parent option; given `{ path: '/', children: [{ path: 'abc' }] }`, the path `/abc` would cause both routes to activate while the path `/` would cause only the topmost route to activate.
+  An array of options. The paths of these nested options are appended to the parent option. Given `{ path: '/', children: [{ path: 'abc' }] }`, the path `/abc` would cause both routes to activate while the path `/` would cause only the topmost route to activate.
 
 
-### `<router-link>`
-Exported as `RouterLink`. Use `RouterLink.install()` to define the element.
-- **to: string [attribute]**
-- **exact: boolean [attribute]**
-- **disabled: boolean [attribute]**
-- **active: boolean [attribute]**
+### `RouterLink`
+A custom element that integrates with the `Router` like an `<a>` element. 
 
-A custom element that integrates with the `Router` like an `<a>` element. When the location's pathname matches that of the element, it gains an `active` attribute, which is useful for applying styles to match.
-Can be used as a standalone element:
+#### Properties
+All properties synchronize with attributes and vice versa.
+
+- **to: string**
+The target pathname. Similar to an `<a>` element's `href` attribute.
+
+- **active: boolean**
+Applied if the link's `to` attribute matches the current pathname.
+
+- **exact: boolean**
+Decides how to match the current pathname.
+
+If `exact` is true, a link is active if `to` is strictly equal to the pathname.
+If `exact` is false, and `to` starts with a `/`, the link is active if the current path starts with `to`.
+If `to` does not start with a `/`, the link is active if the current path ends with `to`.
+
+- **disabled: boolean**
+If `true`, prevents the link from triggering navigation.
+
+#### Usage
+To use the router link, you need to first define it as a custom element:
+```js
+import { RouterLink } from 'runway';
+
+customElements.define('router-link', RouterLink);
+```
+Note: you may use any name you like.
+
+Then, you can use it anywhere as a regular HTML element:
 ```html
 <router-link to="/path">
   Link
 <router-link>
 ```
-or as a wrapper around an `<a>` element:
-```html
-<router-link>
-  <a href="/path">Link</a>
-<router-link>
-```
-The latter is useful if progressive enhancement is desired (e.g. if JavaScript is disabled, navigation is still possible).
+When the location's pathname matches that of the element, it gains an `active` attribute, which is useful for applying styles to match.
 
-If you're changing the target of the link during it's lifetime (e.g. if you're using a data-binding system), using the `to` attribute/property is preferred, as that will notify the element when any changes occur and apply the `active` attribute as appropriate. The two patterns can be combined:
+You may wrap the element around an `<a>` to make use its' built in capabilities, such as ctrl-click to open in a new tab:
 ```html
 <router-link to="/path">
   <a>Link</a>
-</router-link>
+<router-link>
 ```
+When used as a wrapper element, the `<router-link>` element will automatically update the `<a>` element's `href` attribute whenever `to` changes.
+
+Optionally, the `<a>` element's `href` attribute may be set statically to mirror the `<router-link>` element's `to` attribute:
+```html
+<router-link to="/path">
+  <a href="/path">Link</a>
+<router-link>
+```
+Then, if JavaScript is disabled, normal navigation may still occur.
 
 ## Browser support
 Runway is tested against the latest version of Chrome and Firefox.
@@ -223,7 +249,7 @@ To test the project, run:
 ```console
 yarn run test
 ```
-This starts a Chrome, Firefox and Edge instance that will run all the tests once per browser.
+This starts a Chrome and Firefox instance that will run all the tests once per browser.
 
 ### Example
 To see an example of Runway in use, run:
