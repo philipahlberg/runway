@@ -16,10 +16,6 @@
     esutils "^2.0.2"
     js-tokens "^4.0.0"
 
-"@philipahlberg/expressionist@^0.1.2":
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/@philipahlberg/expressionist/-/expressionist-0.1.2.tgz#ced88fc8a7a37407e5273a9b82b74a4c6d92cdb3"
-
 "@types/estree@0.0.39":
   version "0.0.39"
   resolved "https://registry.yarnpkg.com/@types/estree/-/estree-0.0.39.tgz#e177e699ee1b8c22d23174caaa7422644389509f"
@@ -3083,6 +3079,11 @@ to-regex@^3.0.1, to-regex@^3.0.2:
 toidentifier@1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/toidentifier/-/toidentifier-1.0.0.tgz#7e1be3470f1e77948bc43d94a3c8f4d7752ba553"
+
+trailblazer@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/trailblazer/-/trailblazer-5.0.0.tgz#ffbe4b6271b976112be22b4f6b945b231e7a9d00"
+  integrity sha512-665NusLLVEypqVsq+K/syw7sNkz9ZPxmgdrTUvgg9hq54BJ7bXE8/31m8OIQi3Pdpt+XTa8WssYlPL9sV2HlMQ==
 
 tslib@^1.9.0, tslib@^1.9.3:
   version "1.9.3"

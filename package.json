@@ -63,6 +63,6 @@
     "typescript": "^3.1.6"
   },
   "dependencies": {
-    "@philipahlberg/expressionist": "^0.1.2"
+    "trailblazer": "^5.0.0"
   }
 }

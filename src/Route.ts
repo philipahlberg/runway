@@ -1,4 +1,4 @@
-import { parse, compile, execute, map } from '@philipahlberg/expressionist';
+import { parse, compile, execute, toMap } from 'trailblazer';
 import { join, decode } from './utils';
 import {
   RouteOptions,
@@ -109,7 +109,7 @@ export class Route {
 
   map(path: string): Map<string, string> {
     const values = execute(this.pattern, path);
-    return map(this.keys, values);
+    return toMap(this.keys, values);
   }
 }
 
