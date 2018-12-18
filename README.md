@@ -55,8 +55,8 @@ const router = new Router([
   }
 ]);
 ```
-In this example, when an instance of `Component` is created, the property `myProp` is set onthe instance with the value of the `param` parameter.
-If the user visited `/foo`, the value of `parameters.get('foo')` would be `foo`.
+In this example, when an instance of `Component` is created, the property `myProp` is set on the instance with the value of the `param` parameter.
+If the user visited `/foo`, the value of `parameters.get('param')` would be `foo`.
 The `properties` function also receives other key details of the activated route, including a map of the search parameters (the part after the `?`).
 
 A route can also redirect to another path instead of rendering a component:
@@ -120,7 +120,7 @@ yarn run example
 Exported as `Router` and `default`.
 - **constructor(routes: Record[]): Router**
 
-  Creates the router instance. Note that this does not render anything, nor does it add any listeners.
+  Creates the router instance.
 - **connect(root: HTMLElement): Promise\<void>**
 
   Connect the router to the DOM. The promise resolves once every component has been loaded and connected.
@@ -151,7 +151,7 @@ Exported as `Router` and `default`.
   Note that the component needs to be the default export of the module when using `import()`.
 - **exact?: boolean**
 
-  Whether or not the route should match "exactly"; `{ path: '/', exact: false }` would match any path (because any path begins with '/') while `{ path: '/' exact: true }` would *only* match '/'.
+  Whether or not the route should match *exactly*; `{ path: '/', exact: false }` would match any path (because any path begins with `/`) while `{ path: '/' exact: true }` would *only* match '/'.
   By default, the route will match exactly when no child routes are attached, otherwise it will not.
 - **redirect?: string**
 
