@@ -1,0 +1,45 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "extends": [
+    "prettier",
+    "eslint:recommended",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "env": {
+    "browser": true
+  },
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 2018
+  },
+  "settings": {
+    "import/resolver": "node"
+  },
+  "rules": {
+    "semi": ["error", "always"],
+    "keyword-spacing": ["error", {
+      "before": true,
+      "after": true
+    }],
+    "space-before-blocks": ["error", "always"],
+    "prefer-arrow-callback": ["error", {
+      "allowNamedFunctions": false,
+      "allowUnboundThis": true
+    }],
+    "prefer-const": ["error", {
+      "destructuring": "any",
+      "ignoreReadBeforeAssign": false
+    }],
+    "no-this-before-super": ["error"],
+    "no-var": ["error"],
+    "no-unreachable": ["error"],
+    "valid-typeof": ["error"],
+    "quote-props": ["error", "consistent-as-needed"],
+    "one-var": ["error", "never"]
+  }
+}
