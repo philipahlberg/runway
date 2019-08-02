@@ -1,16 +1,15 @@
 import { Route } from './Route';
 
 export interface ModuleDescriptor {
-  default: Component;
-  [key: string]: any;
+    default: Component;
 }
 
 export type Module = PromiseLike<ModuleDescriptor>;
 
-export type Dictionary<T> = { [key: string]: T };
+export interface Dictionary<T> { [key: string]: T }
 
 export interface Constructor<T> {
-  new (...args: any[]): T;
+    new (): T;
 }
 
 export type Component = Constructor<HTMLElement>;
@@ -19,36 +18,36 @@ export type LoadFn = () => Module;
 
 export type GuardFn = () => boolean;
 
-export type PropertiesFn = (snapshot: Snapshot) => Dictionary<any>;
+export type PropertiesFn = (snapshot: Snapshot) => {};
 
 export interface RedirectOptions {
-  path: string;
-  exact?: boolean;
-  guard?: GuardFn;
-  redirect: string;
+    path: string;
+    exact?: boolean;
+    guard?: GuardFn;
+    redirect: string;
 }
 
 export interface ComponentOptions {
-  path: string;
-  exact?: boolean;
-  guard?: GuardFn;
-  component?: Component;
-  load?: LoadFn;
-  slot?: string;
-  properties?: PropertiesFn;
-  children?: RouteOptions[];
+    path: string;
+    exact?: boolean;
+    guard?: GuardFn;
+    component?: Component;
+    load?: LoadFn;
+    slot?: string;
+    properties?: PropertiesFn;
+    children?: RouteOptions[];
 }
 
 export type RouteOptions = ComponentOptions | RedirectOptions;
 
 export interface Snapshot {
-  parameters: Map<string, string>;
-  query: URLSearchParams;
-  hash: string;
-  matched: string;
+    parameters: Map<string, string>;
+    query: URLSearchParams;
+    hash: string;
+    matched: string;
 }
 
 export interface SearchResult {
-  routes: Route[];
-  path: string;
+    routes: Route[];
+    path: string;
 }

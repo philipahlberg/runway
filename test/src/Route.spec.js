@@ -12,7 +12,10 @@ describe('Route', () => {
     });
 
     it('matches a route with a named parameter', () => {
-      const route = new Route({ path: '/:a' });
+      const route = new Route({
+        path: '/:a',
+        component: StaticComponent
+      });
       expect(route.matches('/1')).to.be.true;
     });
 
@@ -51,7 +54,10 @@ describe('Route', () => {
 
   describe('#snapshot', () => {
     it('provides key details of the route in relation to the given path', () => {
-      const route = new Route({ path: '/:param' });
+      const route = new Route({
+        path: '/:param',
+        component: StaticComponent
+      });
       const { parameters, query, hash, matched } = route.snapshot(
         new URL('/123?q=456#hash', location.href)
       );
@@ -66,7 +72,8 @@ describe('Route', () => {
   describe('#transfer', () => {
     it('transfers parameters from one route to another', () => {
       const route = new Route({
-        path: '/:a/:b/:c'
+        path: '/:a/:b/:c',
+        component: StaticComponent
       });
       const source = '/1/2/3';
       const target = '/:a/:c/:b';

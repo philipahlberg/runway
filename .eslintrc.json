@@ -8,17 +8,16 @@
     "eslint:recommended",
     "plugin:import/errors",
     "plugin:import/warnings",
+    "plugin:import/typescript",
     "plugin:@typescript-eslint/recommended"
   ],
   "env": {
-    "browser": true
+    "browser": true,
+    "es6": true
   },
   "parserOptions": {
     "sourceType": "module",
     "ecmaVersion": 2018
-  },
-  "settings": {
-    "import/resolver": "node"
   },
   "rules": {
     "semi": ["error", "always"],
@@ -40,6 +39,9 @@
     "no-unreachable": ["error"],
     "valid-typeof": ["error"],
     "quote-props": ["error", "consistent-as-needed"],
-    "one-var": ["error", "never"]
+    "one-var": ["error", "never"],
+    "@typescript-eslint/explicit-function-return-type": ["error", {
+      "allowExpressions": true
+    }]
   }
 }

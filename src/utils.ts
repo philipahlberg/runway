@@ -4,7 +4,7 @@
  * @param path the path to normalize
  */
 export function normalize(path: string): string {
-  return path.replace(/[\/]+/g, '/');
+    return path.replace(/[/]+/g, '/');
 }
 
 /**
@@ -13,24 +13,24 @@ export function normalize(path: string): string {
  * @param segments the segments to be joined
  */
 export function join(...segments: string[]): string {
-  return normalize(segments.join('/'));
+    return normalize(segments.join('/'));
 }
 
 /**
  * Shorthand for `decodeURIComponent`
  */
 export function decode(str: string): string {
-  return decodeURIComponent(str);
+    return decodeURIComponent(str);
 }
 
-export function pushState(path: string) {
-  history.pushState(null, '', path);
+export function pushState(path: string): void {
+    history.pushState(null, '', path);
 }
 
-export function replaceState(path: string) {
-  history.replaceState(null, '', path);
+export function replaceState(path: string): void {
+    history.replaceState(null, '', path);
 }
 
-export function popState(n: number = 1) {
-  history.go(-n);
+export function popState(n: number = 1): void {
+    history.go(-n);
 }

@@ -1,126 +1,138 @@
 import { parse, compile, execute, toMap } from 'trailblazer';
 import { join, decode } from './utils';
 import {
-  RouteOptions,
-  RedirectOptions,
-  Component,
-  GuardFn,
-  PropertiesFn,
-  LoadFn,
-  Snapshot
+    Module,
+    RouteOptions,
+    RedirectOptions,
+    Component,
+    GuardFn,
+    PropertiesFn,
+    LoadFn,
+    Snapshot
 } from './types';
 
 function createLoadFn(component: Component): LoadFn {
-  return () => Promise.resolve({ default: component });
+    return (): Module => Promise.resolve({ default: component });
 }
 
 function isRedirect(options: RouteOptions): options is RedirectOptions {
-  return options.hasOwnProperty('redirect');
+    return Object.getOwnPropertyNames(options)
+        .includes('redirect');
 }
+
+const defaultGuardFn = Object.seal(() => true);
+
+const defaultPropertiesFn = Object.seal(() => ({}));
 
 export class Route {
-  private static cache = new WeakMap<Route, Component>();
-  private keys: string[];
-  private pattern: RegExp;
-  path: string;
-  exact: boolean;
-  guard: GuardFn;
-  redirect?: string;
-  component?: Component;
-  load?: LoadFn;
-  properties?: PropertiesFn;
-  slot?: string;
-  children?: Route[];
+    private static cache = new WeakMap<Route, Component>();
+    private keys: string[];
+    private pattern: RegExp;
+    public path: string;
+    public exact: boolean;
+    public guard: GuardFn;
+    public redirect?: string;
+    public component?: Component;
+    public load?: LoadFn;
+    public properties?: PropertiesFn;
+    public slot?: string;
+    public children?: Route[];
 
-  constructor(options: RouteOptions) {
-    this.path = options.path;
-    this.guard = options.guard || (() => true);
-    this.keys = parse(options.path);
-
-    if (isRedirect(options)) {
-      this.exact = true;
-      this.redirect = options.redirect;
-    } else {
-      this.exact = options.exact != null
-        ? options.exact
-        : options.children == null;
-
-      this.slot = options.slot;
-
-      if (options.load != null) {
-        this.load = options.load;
-      } else {
-        this.load = createLoadFn(options.component!);
-        this.component = options.component;
-      }
-
-      this.children = (options.children || [])
-        .map(child => createChildRoute(child, this));
-
-      this.properties = options.properties || (() => ({}));
+    private static createChildRoute(options: RouteOptions, parent: Route): Route {
+        if (options.path === '') {
+            options.path = parent.path;
+        } else {
+            options.path = join(parent.path, options.path);
+        }
+        if (isRedirect(options)) {
+            options.redirect = join(parent.path, options.redirect);
+        }
+        return new Route(options);
     }
 
-    this.pattern = compile(this.path, this.exact);
-  }
+    public constructor(options: RouteOptions) {
+        this.path = options.path;
+        this.guard = options.guard || defaultGuardFn;
+        this.keys = parse(options.path);
 
-  async import(): Promise<Component> {
-    const cache = Route.cache;
-    let component = cache.get(this);
-    if (component === undefined) {
-      const module = await (this.load!)();
-      component = module.default;
-      cache.set(this, component);
-      return component;
+        if (isRedirect(options)) {
+            this.exact = true;
+            this.redirect = options.redirect;
+        } else {
+            this.exact = options.exact != null
+                ? options.exact
+                : options.children == null;
+
+            this.slot = options.slot;
+
+            if (options.load != null) {
+                this.load = options.load;
+            } else if (options.component != null) {
+                this.load = createLoadFn(options.component);
+                this.component = options.component;
+            } else {
+                throw new Error(
+                    'Either `load` or `component` must be provided.'
+                );
+            }
+
+            this.children = (options.children || [])
+                .map((child): Route => Route.createChildRoute(child, this));
+
+            this.properties = options.properties || defaultPropertiesFn;
+        }
+
+        this.pattern = compile(this.path, this.exact);
     }
-    return component;
-  }
 
-  snapshot(source: Location | URL): Snapshot {
-    let { pathname, search, hash } = source;
-    pathname = decode(pathname);
-    search = decode(search);
-    return {
-      parameters: this.map(pathname),
-      query: new URLSearchParams(search),
-      matched: this.matched(pathname),
-      hash: hash.substring(1)
-    };
-  }
-
-  transfer(source: string, target: string): string {
-    const values = execute(this.pattern, source);
-    let i = values.length;
-    while (i--) {
-      target = target
-        .replace(':' + this.keys[i], values[i]);
+    public async import(): Promise<Component> {
+        const cache = Route.cache;
+        let component = cache.get(this);
+        if (component == null) {
+            if (this.load == null) {
+                throw new Error('Missing `load` function.');
+            }
+            const module = await this.load();
+            component = module.default;
+            cache.set(this, component);
+        }
+        return component;
     }
 
-    return target;
-  }
+    public snapshot(source: Location | URL): Snapshot {
+        const pathname = decode(source.pathname);
+        const search = decode(source.search);
+        const hash = source.hash;
+        return {
+            parameters: this.map(pathname),
+            query: new URLSearchParams(search),
+            matched: this.matched(pathname),
+            hash: hash.substring(1)
+        };
+    }
 
-  matches(path: string): boolean {
-    return this.pattern.test(path);
-  }
+    public transfer(source: string, target: string): string {
+        const values = execute(this.pattern, source);
+        let i = values.length;
+        while (i--) {
+            target = target
+                .replace(':' + this.keys[i], values[i]);
+        }
 
-  matched(path: string): string {
-    const matched = this.pattern.exec(path);
-    return matched && matched[0] || '';
-  }
+        return target;
+    }
 
-  map(path: string): Map<string, string> {
-    const values = execute(this.pattern, path);
-    return toMap(this.keys, values);
-  }
-}
+    public matches(path: string): boolean {
+        return this.pattern.test(path);
+    }
 
-function createChildRoute(options: RouteOptions, parent: Route): Route {
-  if (options.path === '') {
-    options.path = parent.path;
-  } else {
-    options.path = join(parent.path, options.path);
-  }
-  if (isRedirect(options)) {
-    options.redirect = join(parent.path, options.redirect);
-  }
-  return new Route(options);
+    public matched(path: string): string {
+        const matched = this.pattern.exec(path);
+        return matched && matched[0] || '';
+    }
+
+    public map(path: string): Map<string, string> {
+        const values = execute(this.pattern, path);
+        return toMap(this.keys, values);
+    }
 }

@@ -7,7 +7,10 @@ describe('Router', () => {
   describe('constructor', () => {
     it('does not render before `connect` has been called', () => {
       const router = new Router([
-        { path: '/', component: StaticComponent }
+        {
+          path: '/',
+          component: StaticComponent
+        }
       ]);
       expect(router.isConnected).to.equal(false);
     });
@@ -16,7 +19,10 @@ describe('Router', () => {
   describe('#connect', () => {
     it('connects the router to the DOM', async () => {
       const router = new Router([
-        { path: '/', component: StaticComponent }
+        {
+          path: '/',
+          component: StaticComponent
+        }
       ]);
 
       const outlet = div();
@@ -30,7 +36,10 @@ describe('Router', () => {
   describe('#disconnect', () => {
     it('removes the previously rendered views', async () => {
       const router = new Router([
-        { path: '/', component: StaticComponent }
+        {
+          path: '/',
+          component: StaticComponent
+        }
       ]);
 
       const outlet = div();
@@ -46,8 +55,14 @@ describe('Router', () => {
   describe('#match', () => {
     it('matches a simple route', () => {
       const router = new Router([
-        { path: '/a' },
-        { path: '/abc' }
+        {
+          path: '/a',
+          component: StaticComponent
+        },
+        {
+          path: '/abc',
+          component: StaticComponent
+        }
       ]);
 
       const { routes, path } = router.match('/a');
@@ -60,8 +75,14 @@ describe('Router', () => {
 
     it('ignores query', () => {
       const router = new Router([
-        { path: '/a' },
-        { path: '/abc' }
+        {
+          path: '/a',
+          component: StaticComponent
+        },
+        {
+          path: '/abc',
+          component: StaticComponent
+        }
       ]);
 
       const { routes, path } = router.match('/a?q=123');
@@ -74,7 +95,10 @@ describe('Router', () => {
 
     it('ignores hash', () => {
       const router = new Router([
-        { path: '/a' }
+        {
+          path: '/a',
+          component: StaticComponent
+        }
       ]);
 
       const { routes, path } = router.match('/a#hash');
@@ -87,7 +111,10 @@ describe('Router', () => {
 
     it('ignores both query and hash', () => {
       const router = new Router([
-        { path: '/a' }
+        {
+          path: '/a',
+          component: StaticComponent
+        }
       ]);
 
       const { routes, path } = router.match('/a?q=123#hash');
@@ -100,8 +127,14 @@ describe('Router', () => {
 
     it('follows redirects', () => {
       const router = new Router([
-        { path: '/a', redirect: '/b' },
-        { path: '/b' }
+        {
+          path: '/a',
+          redirect: '/b'
+        },
+        {
+          path: '/b',
+          component: StaticComponent
+        }
       ]);
 
       const { routes, path } = router.match('/a');
@@ -114,7 +147,11 @@ describe('Router', () => {
 
     it('respects route guards', () => {
       const router = new Router([
-        { path: '/', guard: () => false }
+        {
+          path: '/',
+          component: StaticComponent,
+          guard: () => false
+        }
       ]);
 
       const { routes } = router.match('/');
@@ -124,8 +161,12 @@ describe('Router', () => {
     it('matches nested routes', () => {
       const router = new Router([{
         path: '/',
+        component: StaticComponent,
         children: [
-          { path: 'abc' }
+          {
+            path: 'abc',
+            component: StaticComponent
+          }
         ]
       }]);
 
@@ -137,7 +178,10 @@ describe('Router', () => {
   describe('#render', () => {
     it('renders a component', async () => {
       const router = new Router([
-        { path: '/', component: StaticComponent }
+        {
+          path: '/',
+          component: StaticComponent
+        }
       ]);
   
       const outlet = div();
