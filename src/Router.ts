@@ -19,10 +19,10 @@ export class Router extends EventTarget {
     }
 
     /**
-   * Connect the router to an element.
-   * This checks the current location for matching,
-   * and renders those matched elements.
-   */
+     * Connect the router to an element.
+     * This checks the current location for matching,
+     * and renders those matched elements.
+     */
     public async connect(root: HTMLElement): Promise<void> {
         window.addEventListener('popstate', this.onPopstate);
         this.isConnected = true;
@@ -35,10 +35,10 @@ export class Router extends EventTarget {
     }
 
     /**
-   * Disconnect the router from it's current root element.
-   * This removes all the elements currently rendered, and
-   * removes all listeners, effectively leaving the router inactive.
-   */
+     * Disconnect the router from it's current root element.
+     * This removes all the elements currently rendered, and
+     * removes all listeners, effectively leaving the router inactive.
+     */
     public disconnect(): void {
         window.removeEventListener('popstate', this.onPopstate);
         this.isConnected = false;
@@ -48,8 +48,8 @@ export class Router extends EventTarget {
     }
 
     /**
-   * Push a history entry onto the stack.
-   */
+     * Push a history entry onto the stack.
+     */
     public async push(to: string): Promise<void> {
         to = decode(to);
         const { routes, path } = this.match(to);
@@ -59,8 +59,8 @@ export class Router extends EventTarget {
     }
 
     /**
-   * Replace the topmost entry in the history stack.
-   */
+     * Replace the topmost entry in the history stack.
+     */
     public async replace(to: string): Promise<void> {
         to = decode(to);
         const { routes, path } = this.match(to);
@@ -70,8 +70,8 @@ export class Router extends EventTarget {
     }
 
     /**
-   * Pop the top `n` entries off of history stack.
-   */
+     * Pop the top `n` entries off of history stack.
+     */
     public pop(n: number = 1): void {
     // triggers a popstate event, so rendering
     // happens in this.onPopstate.
@@ -114,18 +114,18 @@ export class Router extends EventTarget {
     }
 
     /**
-   * Search for the elements that would match the given path.
-   * If a redirect is encountered, it will be followed.
-   * The resulting path and the matched elements are returned.
-   */
+     * Search for the elements that would match the given path.
+     * If a redirect is encountered, it will be followed.
+     * The resulting path and the matched elements are returned.
+     */
     private match(path: string): SearchResult {
         return this.search(path, this.routes, []);
     }
 
     /**
-   * Render the given routes.
-   * The routes are assumed to be nested.
-   */
+     * Render the given routes.
+     * The routes are assumed to be nested.
+     */
     private async render(matchedRoutes: Route[]): Promise<void> {
         if (this.root == null) {
             return;
@@ -202,8 +202,8 @@ export class Router extends EventTarget {
     }
 
     /**
-   * Update all `:param` bindings and `properties` functions in the tree.
-   */
+     * Update all `:param` bindings and `properties` functions in the tree.
+     */
     private updateProperties(): void {
         for (let i = 0; i < this.elements.length; i++) {
             const element = this.elements[i];
@@ -217,8 +217,8 @@ export class Router extends EventTarget {
     }
 
     /**
-   * Remove all currently active elements.
-   */
+     * Remove all currently active elements.
+     */
     private teardown(): void {
         while (this.elements.length > 0) {
             const element = this.elements.pop();
