@@ -9,8 +9,6 @@ const a = (href) => {
 
 const div = () => document.createElement('div');
 const connect = (el) => document.body.appendChild(el);
-const disconnect = (el) => document.body.removeChild(el);
-const push = (path) => history.pushState(null, '', path);
 
 describe('RouterLink', async () => {
   const router = new Router([]);
@@ -24,12 +22,13 @@ describe('RouterLink', async () => {
     router.disconnect();
   });
 
-  it('can be defined', () => {
-    customElements.define('router-link', RouterLink);
-  });
+  it('can be installed', () => {
+    RouterLink.install({
+      router
+    });
 
-  it('can be configured to use a router', () => {
-    RouterLink.use(router);
+    const routerLink = new RouterLink();
+    expect(routerLink).to.be.instanceOf(HTMLElement);
   });
 
   it('applies active attribute when it matches', async () => {
