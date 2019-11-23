@@ -73,8 +73,8 @@ export class Router extends EventTarget {
      * Pop the top `n` entries off of history stack.
      */
     public pop(n: number = 1): void {
-    // triggers a popstate event, so rendering
-    // happens in this.onPopstate.
+        // triggers a popstate event, so rendering
+        // happens in this.onPopstate.
         popState(n);
     }
 
