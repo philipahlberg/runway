@@ -22,13 +22,12 @@ describe('RouterLink', async () => {
     router.disconnect();
   });
 
-  it('can be installed', () => {
-    RouterLink.install({
-      router
-    });
+  it('can be defined', () => {
+    customElements.define('router-link', RouterLink);
+  });
 
-    const routerLink = new RouterLink();
-    expect(routerLink).to.be.instanceOf(HTMLElement);
+  it('can be configured to use a router', () => {
+    RouterLink.use(router);
   });
 
   it('applies active attribute when it matches', async () => {
