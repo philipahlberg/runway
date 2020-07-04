@@ -14,7 +14,7 @@ api.addEventListener('sign-in', () => {
 
 const router = new Router([
   // Direct match:
-  // When `/signin` is navigated to,
+  // When `/sign-in` is navigated to,
   // this will be matched and SignIn
   // will be rendered.
   {
