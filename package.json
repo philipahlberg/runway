@@ -25,9 +25,9 @@
     "test:prod": "karma start scripts/karma.prod.js",
     "build": "npm run build:types && npm run build:prod",
     "build:types": "tsc --emitDeclarationOnly",
-    "build:test": "rollup -c scripts/rollup.dev.js",
-    "build:dev": "rollup -w -c scripts/rollup.dev.js",
-    "build:prod": "rollup -c scripts/rollup.prod.js",
+    "build:test": "rollup -c test/rollup.config.js",
+    "build:dev": "rollup -w -c scripts/rollup.config.js",
+    "build:prod": "rollup -c ./rollup.config.js",
     "lint": "eslint src/**/*.ts",
     "format": "prettier",
     "example": "node scripts/example.js"
