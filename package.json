@@ -30,9 +30,6 @@
     "build:prod": "rollup -c scripts/rollup.prod.js",
     "lint": "eslint src/**/*.ts",
     "format": "prettier",
-    "docs": "npm run docs:build && npm run docs:serve",
-    "docs:build": "typedoc src/ --out docs/",
-    "docs:serve": "node scripts/docs.js",
     "example": "node scripts/example.js"
   },
   "devDependencies": {
@@ -59,7 +56,6 @@
     "rollup-plugin-terser": "^5.1.2",
     "rollup-plugin-typescript": "^1.0.1",
     "tslib": "^1.10.0",
-    "typedoc": "^0.15.2",
     "typescript": "^3.7.2"
   },
   "dependencies": {
