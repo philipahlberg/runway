@@ -19,13 +19,17 @@
     "single-page application"
   ],
   "scripts": {
-    "test": "npm run build && rollup -c test/rollup.config.js && karma start ./karma.conf.js",
-    "build": "tsc --emitDeclarationOnly && rollup -c ./rollup.config.js",
+    "test": "rollup -c test/rollup.config.js && karma start ./karma.conf.js",
+    "build": "rollup -c",
     "lint": "eslint src/**/*.ts",
     "format": "prettier",
     "example": "node scripts/example.js"
   },
   "devDependencies": {
+    "@rollup/plugin-node-resolve": "^8.1.0",
+    "@rollup/plugin-typescript": "^5.0.1",
+    "@types/chai": "^4.2.11",
+    "@types/mocha": "^7.0.2",
     "@types/node": "^12.12.12",
     "@typescript-eslint/eslint-plugin": "^2.8.0",
     "@typescript-eslint/parser": "^2.8.0",
@@ -44,11 +48,9 @@
     "koa-static": "^5.0.0",
     "mocha": "^6.2.2",
     "prettier": "^1.19.1",
-    "rollup": "^1.27.4",
-    "rollup-plugin-node-resolve": "^5.2.0",
-    "rollup-plugin-typescript": "^1.0.1",
-    "tslib": "^1.10.0",
-    "typescript": "^3.7.2"
+    "rollup": "^2.18.2",
+    "tslib": "^2.0.0",
+    "typescript": "^3.9.6"
   },
   "dependencies": {
     "trailblazer": "^5.0.0"

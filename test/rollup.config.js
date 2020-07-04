@@ -1,15 +1,19 @@
-import resolve from 'rollup-plugin-node-resolve';
-import typescript from 'rollup-plugin-typescript';
+import resolve from '@rollup/plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
+import tsconfig from './tsconfig.json';
 
 export default {
-  input: './test/src/index.js',
+  input: './test/src/index.ts',
   output: {
-    file: './test/dist/index.js',
+    dir: './test/dist',
     format: 'es'
   },
   plugins: [
-    typescript(),
-    resolve()
+    typescript({
+      tsconfig: false,
+      ...tsconfig.compilerOptions,
+    }),
+    resolve(),
   ],
   inlineDynamicImports: true
-}
+};

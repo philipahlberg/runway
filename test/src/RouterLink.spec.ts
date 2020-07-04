@@ -1,14 +1,16 @@
-import { Router } from '../../src/Router.ts';
-import { RouterLink } from '../../src/RouterLink.ts';
+import { Router } from '../../src/Router';
+import { RouterLink } from '../../src/RouterLink';
 
-const a = (href) => {
+declare const expect: any;
+
+const a = (href: string) => {
   const el = document.createElement('a');
   el.href = href;
   return el;
 };
 
 const div = () => document.createElement('div');
-const connect = (el) => document.body.appendChild(el);
+const connect = (element: HTMLElement) => document.body.appendChild(element);
 
 describe('RouterLink', async () => {
   const router = new Router([]);

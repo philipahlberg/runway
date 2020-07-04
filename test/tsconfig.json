@@ -1,7 +1,5 @@
 {
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist",
     "target": "es2017",
     "module": "esnext",
     "lib": [
@@ -9,13 +7,12 @@
       "dom"
     ],
     "moduleResolution": "node",
-    "declaration": true,
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true
   },
   "include": [
-    "src"
+    "./src"
   ]
 }

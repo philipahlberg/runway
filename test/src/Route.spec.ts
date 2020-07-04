@@ -1,5 +1,7 @@
-import { Route } from '../../src/Route.ts';
+import { Route } from '../../src/Route';
 import { StaticComponent } from './StaticComponent.js';
+
+declare const expect: any;
 
 describe('Route', () => {
   describe('#matches', () => {
@@ -25,8 +27,8 @@ describe('Route', () => {
         component: StaticComponent,
         children: [{ path: 'b', component: StaticComponent }]
       });
-      const child = route.children[0];
-      expect(child.matches('/a/b')).to.equal(true);
+      expect(route.children?.length).to.equal(1);
+      expect(route.children?.[0].matches('/a/b')).to.equal(true);
     });
   });
 
