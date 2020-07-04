@@ -1,6 +1,6 @@
 module.exports = (config) => {
   config.set({
-    basePath: '../',
+    basePath: '.',
     frameworks: [
       'mocha',
       'chai'
@@ -9,15 +9,22 @@ module.exports = (config) => {
       { pattern: 'test/dist/index.js', type: 'module' }
     ],
     browsers: [
-      'ChromeHeadless'
+      'ChromeHeadless',
+      'FirefoxHeadless'
     ],
+    customLaunchers: {
+      FirefoxHeadless: {
+        base: 'Firefox',
+        flags: ['-headless'],
+      },
+    },
     reporters: [
       'dots'
     ],
     port: 1234,
     colors: true,
     logLevel: config.LOG_WARN,
-    autoWatch: true,
-    singleRun: false
+    autoWatch: false,
+    singleRun: true
   });
 };

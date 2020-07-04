@@ -19,15 +19,8 @@
     "single-page application"
   ],
   "scripts": {
-    "dev": "npm run test:watch",
-    "test": "npm run build:test && npm run test:prod",
-    "test:dev": "karma start scripts/karma.dev.js",
-    "test:prod": "karma start scripts/karma.prod.js",
-    "build": "npm run build:types && npm run build:prod",
-    "build:types": "tsc --emitDeclarationOnly",
-    "build:test": "rollup -c test/rollup.config.js",
-    "build:dev": "rollup -w -c scripts/rollup.config.js",
-    "build:prod": "rollup -c ./rollup.config.js",
+    "test": "npm run build && rollup -c test/rollup.config.js && karma start ./karma.conf.js",
+    "build": "tsc --emitDeclarationOnly && rollup -c ./rollup.config.js",
     "lint": "eslint src/**/*.ts",
     "format": "prettier",
     "example": "node scripts/example.js"
