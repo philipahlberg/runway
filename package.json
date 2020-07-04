@@ -19,10 +19,9 @@
     "single-page application"
   ],
   "scripts": {
-    "test": "rollup -c test/rollup.config.js && karma start ./karma.conf.js",
     "build": "rollup -c",
-    "lint": "eslint src/**/*.ts",
-    "format": "prettier",
+    "test": "rollup -c test/rollup.config.js && karma start ./karma.conf.js",
+    "format": "prettier src/**/*.ts --write",
     "example": "node scripts/example.js"
   },
   "devDependencies": {
@@ -47,7 +46,7 @@
     "koa": "^2.11.0",
     "koa-static": "^5.0.0",
     "mocha": "^6.2.2",
-    "prettier": "^1.19.1",
+    "prettier": "^2.0.5",
     "rollup": "^2.18.2",
     "tslib": "^2.0.0",
     "typescript": "^3.9.6"
