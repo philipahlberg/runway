@@ -22,7 +22,7 @@
     "build": "rollup -c",
     "test": "rollup -c test/rollup.config.js && karma start ./karma.conf.js",
     "format": "prettier src/**/*.ts --write",
-    "example": "node scripts/example.js"
+    "example": "npx serve example/"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^8.1.0",
@@ -36,8 +36,6 @@
     "karma-chrome-launcher": "^3.1.0",
     "karma-firefox-launcher": "^1.2.0",
     "karma-mocha": "^2.0.1",
-    "koa": "^2.13.0",
-    "koa-static": "^5.0.0",
     "mocha": "^8.0.1",
     "prettier": "^2.0.5",
     "rollup": "^2.18.2",
