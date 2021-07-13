@@ -1,7 +1,6 @@
 import { parse, compile, execute, toMap } from 'trailblazer';
 import { join, decode } from './utils';
 import {
-  Module,
   RouteOptions,
   RedirectOptions,
   Component,
@@ -12,7 +11,7 @@ import {
 } from './types';
 
 function createLoadFn(component: Component): LoadFn {
-  return (): Module => Promise.resolve({ default: component });
+  return () => Promise.resolve(component);
 }
 
 function isRedirect(options: RouteOptions): options is RedirectOptions {
@@ -89,8 +88,7 @@ export class Route {
       if (this.load == null) {
         throw new Error('Missing `load` function.');
       }
-      const module = await this.load();
-      component = module.default;
+      component = await this.load();
       cache.set(this, component);
     }
     return component;

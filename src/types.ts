@@ -1,11 +1,5 @@
 import { Route } from './Route';
 
-export interface ModuleDescriptor {
-  default: Component;
-}
-
-export type Module = PromiseLike<ModuleDescriptor>;
-
 export interface Dictionary<T> {
   [key: string]: T;
 }
@@ -16,7 +10,7 @@ export interface Constructor<T> {
 
 export type Component = Constructor<HTMLElement>;
 
-export type LoadFn = () => Module;
+export type LoadFn = () => Promise<Component>;
 
 export type GuardFn = () => boolean;
 

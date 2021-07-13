@@ -45,7 +45,7 @@ describe('Route', () => {
     it('resolves a dynamic component', async () => {
       const route = new Route({
         path: '/',
-        load: () => import('./DynamicComponent.js')
+        load: () => import('./DynamicComponent.js').then(mod => mod.default),
       });
 
       const Component = await route.import();

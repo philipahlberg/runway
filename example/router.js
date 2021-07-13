@@ -7,6 +7,9 @@ import Products from '/views/products.js';
 import Product from '/views/product.js';
 import api from '/api.js';
 
+// Load function for a lazy-loaded component
+const SignUp = () => import('./views/sign-up.js').then(mod => mod.default);
+
 let user;
 api.addEventListener('sign-in', () => {
   user = api.user;
@@ -75,7 +78,7 @@ const router = new Router([
   // Lazy-loaded component
   {
     path: '/sign-up',
-    load: () => import('./views/sign-up.js')
+    load: SignUp,
   }
 ]);
 
