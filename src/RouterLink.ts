@@ -136,5 +136,3 @@ export class RouterLink extends HTMLElement {
     this.active = this.test(decode(location.pathname));
   }
 }
-
-export default RouterLink;

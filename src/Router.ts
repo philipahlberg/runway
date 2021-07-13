@@ -239,5 +239,3 @@ export class Router extends EventTarget {
     this.dispatchEvent(new Event(type));
   }
 }
-
-export default Router;
