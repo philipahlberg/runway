@@ -13,7 +13,10 @@ const div = () => document.createElement('div');
 const connect = (element: HTMLElement) => document.body.appendChild(element);
 
 describe('RouterLink', async () => {
-  const router = new Router([]);
+  const router = new Router({
+    root: '/',
+    routes: [],
+  });
   await router.connect(div());
 
   beforeEach(async () => {

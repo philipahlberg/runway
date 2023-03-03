@@ -1,5 +1,10 @@
 import { Route } from './Route';
 
+export interface RouterOptions {
+  root: string;
+  routes: RouteOptions[];
+}
+
 export interface Dictionary<T> {
   [key: string]: T;
 }

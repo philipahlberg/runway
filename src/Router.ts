@@ -1,20 +1,22 @@
 import { Route } from './Route';
-import { decode, pushState, replaceState, popState, encodeQuery } from './utils';
-import { RouteOptions, Component, SearchResult, NavigationOptions } from './types';
+import { decode, pushState, replaceState, popState, encodeQuery, join } from './utils';
+import { RouterOptions, Component, SearchResult, NavigationOptions } from './types';
 
 export class Router extends EventTarget {
   public isConnected: boolean;
   private routes: Route[];
   private elements: HTMLElement[];
   private activeRoutes: Route[];
-  private root?: HTMLElement;
+  private rootElement?: HTMLElement;
+  private root: string;
 
-  public constructor(options: RouteOptions[]) {
+  public constructor(options: RouterOptions) {
     super();
     this.isConnected = false;
     this.elements = [];
     this.activeRoutes = [];
-    this.routes = options.map((option): Route => new Route(option));
+    this.root = options.root;
+    this.routes = options.routes.map((option): Route => new Route(option));
     this.onPopstate = this.onPopstate.bind(this);
   }
 
@@ -23,15 +25,20 @@ export class Router extends EventTarget {
    * This checks the current location for matching,
    * and renders those matched elements.
    */
-  public async connect(root: HTMLElement): Promise<void> {
+  public async connect(rootElement: HTMLElement): Promise<void> {
     window.addEventListener('popstate', this.onPopstate);
     this.isConnected = true;
-    this.root = root;
-    const to = decode(location.pathname);
+    this.rootElement = rootElement;
+    if (!decode(location.pathname).startsWith(this.root)) {
+      await this.render([]);
+      this.emit('change');
+      return;
+    }
+    const to = decode(location.pathname).replace(this.root, '');
     const { routes, path } = this.match(to);
     const url = new URL(location.toString());
     replaceState({
-      path,
+      path: join(this.root, path),
       search: url.search.substring(1),
       hash: url.hash.substring(1),
     });
@@ -40,7 +47,7 @@ export class Router extends EventTarget {
   }
 
   /**
-   * Disconnect the router from it's current root element.
+   * Disconnect the router from it's current rootElement element.
    * This removes all the elements currently rendered, and
    * removes all listeners, effectively leaving the router inactive.
    */
@@ -48,7 +55,7 @@ export class Router extends EventTarget {
     window.removeEventListener('popstate', this.onPopstate);
     this.isConnected = false;
     this.activeRoutes = [];
-    this.root = undefined;
+    this.rootElement = undefined;
     this.teardown();
   }
 
@@ -59,7 +66,7 @@ export class Router extends EventTarget {
     const decoded = decode(to);
     const { routes, path } = this.match(decoded);
     pushState({
-      path,
+      path: join(this.root, path),
       search: encodeQuery(options.query ?? {}),
       hash: options.hash ?? '',
     });
@@ -74,7 +81,7 @@ export class Router extends EventTarget {
     const decoded = decode(to);
     const { routes, path } = this.match(decoded);
     replaceState({
-      path,
+      path: join(this.root, path),
       search: encodeQuery(options.query ?? {}),
       hash: options.hash ?? '',
     });
@@ -97,7 +104,7 @@ export class Router extends EventTarget {
     // TODO: is this ever true?
     if (to !== path) {
       replaceState({
-        path,
+        path: join(this.root, path),
         search: '',
         hash: '',
       });
@@ -148,7 +155,7 @@ export class Router extends EventTarget {
    * The routes are assumed to be nested.
    */
   private async render(matchedRoutes: Route[]): Promise<void> {
-    if (this.root == null) {
+    if (this.rootElement == null) {
       return;
     }
 
@@ -217,7 +224,7 @@ export class Router extends EventTarget {
         this.elements[startIndex - 1].appendChild(additions[0]);
       } else {
         // No reuse
-        this.root.appendChild(this.elements[0]);
+        this.rootElement.appendChild(this.elements[0]);
       }
     }
   }

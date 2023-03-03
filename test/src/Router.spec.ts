@@ -17,22 +17,28 @@ const div = () => document.createElement('div');
 
 describe('Router', () => {
   it('does not render before `connect` has been called', () => {
-    const router = new Router([
-      {
-        path: '/',
-        component: StaticComponent,
-      }
-    ]);
+    const router = new Router({
+      root: '/',
+      routes: [
+        {
+          path: '',
+          component: StaticComponent,
+        }
+      ],
+    });
     expect(router.isConnected).to.equal(false);
   });
 
   it('connects the router to the DOM', async () => {
-    const router = new Router([
-      {
-        path: '/',
-        component: StaticComponent,
-      }
-    ]);
+    const router = new Router({
+      root: '/',
+      routes: [
+        {
+          path: '',
+          component: StaticComponent,
+        }
+      ]
+    });
 
     const outlet = div();
     await router.connect(outlet);
@@ -42,12 +48,15 @@ describe('Router', () => {
   });
 
   it('removes the previously rendered views', async () => {
-    const router = new Router([
-      {
-        path: '/',
-        component: StaticComponent,
-      }
-    ]);
+    const router = new Router({
+      root: '/',
+      routes: [
+        {
+          path: '',
+          component: StaticComponent,
+        }
+      ],
+    });
 
     const outlet = div();
     await router.connect(outlet);
@@ -58,12 +67,15 @@ describe('Router', () => {
   });
 
   it('renders a component', async () => {
-    const router = new Router([
-      {
-        path: '/',
-        component: StaticComponent,
-      }
-    ]);
+    const router = new Router({
+      root: '/',
+      routes: [
+        {
+          path: '',
+          component: StaticComponent,
+        }
+      ],
+    });
 
     const outlet = div();
     await router.connect(outlet);
@@ -73,11 +85,14 @@ describe('Router', () => {
   });
 
   it('resolves properties function as props', async () => {
-    const router = new Router([{
-      path: '/',
-      component: StaticComponent,
-      properties: () => ({ foo: 'bar' }),
-    }]);
+    const router = new Router({
+      root: '/',
+      routes: [{
+        path: '',
+        component: StaticComponent,
+        properties: () => ({ foo: 'bar' }),
+      }],
+    });
 
     const outlet = div();
     await router.connect(outlet);
@@ -90,11 +105,14 @@ describe('Router', () => {
   it('passes a route snapshot to the properties function', async () => {
     let snapshot: any;
     
-    const router = new Router([{
-      path: '/:foo',
-      component: StaticComponent,
-      properties: ss => (snapshot = ss, {}),
-    }]);
+    const router = new Router({
+      root: '/',
+      routes: [{
+        path: '/:foo',
+        component: StaticComponent,
+        properties: ss => (snapshot = ss, {}),
+      }],
+    });
 
     const outlet = div();
     await router.connect(outlet);
@@ -111,14 +129,17 @@ describe('Router', () => {
   });
 
   it('nests components from nested routes', async () => {
-    const router = new Router([{
-      path: '/',
-      component: StaticComponent,
-      children: [{
-        path: ':param',
+    const router = new Router({
+      root: '/',
+      routes: [{
+        path: '',
         component: StaticComponent,
+        children: [{
+          path: ':param',
+          component: StaticComponent,
+        }],
       }],
-    }]);
+    });
 
     const outlet = div();
     await router.connect(outlet);
@@ -132,13 +153,16 @@ describe('Router', () => {
   });
 
   it('respects route guards', async () => {
-    const router = new Router([
-      {
-        path: '/',
-        component: StaticComponent,
-        guard: () => false,
-      }
-    ]);
+    const router = new Router({
+      root: '/',
+      routes: [
+        {
+          path: '/',
+          component: StaticComponent,
+          guard: () => false,
+        }
+      ],
+    });
 
     const outlet = div();
     await router.connect(outlet);
@@ -149,16 +173,19 @@ describe('Router', () => {
   });
 
   it('follows redirects', async () => {
-    const router = new Router([
-      {
-        path: '/a',
-        redirect: '/b',
-      },
-      {
-        path: '/b',
-        component: StaticComponent,
-      },
-    ]);
+    const router = new Router({
+      root: '/',
+      routes: [
+        {
+          path: 'a',
+          redirect: 'b',
+        },
+        {
+          path: 'b',
+          component: StaticComponent,
+        },
+      ],
+    });
 
     const outlet = div();
     await router.connect(outlet);
@@ -168,12 +195,15 @@ describe('Router', () => {
   });
 
   it('ignores query and hash', async () => {
-    const router = new Router([
-      {
-        path: '/a',
-        component: StaticComponent,
-      },
-    ]);
+    const router = new Router({
+      root: '/',
+      routes: [
+        {
+          path: '/a',
+          component: StaticComponent,
+        },
+      ],
+    });
 
     const outlet = div();
     await router.connect(outlet);
