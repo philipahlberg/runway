@@ -1,4 +1,4 @@
-import { Router, RouterLink } from '/index.min.js';
+import { Router, RouterLink } from '/index.js';
 import SignIn from '/views/sign-in.js';
 import Admin from '/views/admin.js';
 import Dashboard from '/views/dashboard.js';

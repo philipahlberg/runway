@@ -1,6 +1,6 @@
 import { Route } from './Route';
-import { decode, pushState, replaceState, popState } from './utils';
-import { RouteOptions, Component, SearchResult } from './types';
+import { decode, pushState, replaceState, popState, encodeQuery } from './utils';
+import { RouteOptions, Component, SearchResult, NavigationOptions } from './types';
 
 export class Router extends EventTarget {
   public isConnected: boolean;
@@ -29,7 +29,12 @@ export class Router extends EventTarget {
     this.root = root;
     const to = decode(location.pathname);
     const { routes, path } = this.match(to);
-    replaceState(path);
+    const url = new URL(location.toString());
+    replaceState({
+      path,
+      search: url.search.substring(1),
+      hash: url.hash.substring(1),
+    });
     await this.render(routes);
     this.emit('change');
   }
@@ -50,23 +55,31 @@ export class Router extends EventTarget {
   /**
    * Push a history entry onto the stack.
    */
-  public async push(to: string): Promise<void> {
-    to = decode(to);
-    const { routes, path } = this.match(to);
-    pushState(path);
-    this.emit('change');
+  public async push(to: string, options: NavigationOptions = {}): Promise<void> {
+    const decoded = decode(to);
+    const { routes, path } = this.match(decoded);
+    pushState({
+      path,
+      search: encodeQuery(options.query ?? {}),
+      hash: options.hash ?? '',
+    });
     await this.render(routes);
+    this.emit('change');
   }
 
   /**
    * Replace the topmost entry in the history stack.
    */
-  public async replace(to: string): Promise<void> {
-    to = decode(to);
-    const { routes, path } = this.match(to);
-    replaceState(path);
-    this.emit('change');
+  public async replace(to: string, options: NavigationOptions = {}): Promise<void> {
+    const decoded = decode(to);
+    const { routes, path } = this.match(decoded);
+    replaceState({
+      path,
+      search: encodeQuery(options.query ?? {}),
+      hash: options.hash ?? '',
+    });
     await this.render(routes);
+    this.emit('change');
   }
 
   /**
@@ -83,7 +96,11 @@ export class Router extends EventTarget {
     const { routes, path } = this.match(to);
     // TODO: is this ever true?
     if (to !== path) {
-      replaceState(path);
+      replaceState({
+        path,
+        search: '',
+        hash: '',
+      });
     }
     this.emit('change');
     this.render(routes);
@@ -154,8 +171,8 @@ export class Router extends EventTarget {
     const removals = this.elements.slice(startIndex);
     while (removals.length > 0) {
       const element = removals.pop();
-      if (element != null && element.parentElement != null) {
-        element.parentElement.removeChild(element);
+      if (element !== undefined) {
+        element.parentElement?.removeChild(element);
       }
     }
 
@@ -226,10 +243,7 @@ export class Router extends EventTarget {
   private teardown(): void {
     while (this.elements.length > 0) {
       const element = this.elements.pop();
-      // need to use parentElement.removeChild()
-      // (as opposed to element.remove())
-      // to avoid bug in Edge
-      if (element != null && element.parentElement != null) {
+      if (element?.parentElement != null) {
         element.parentElement.removeChild(element);
       }
     }

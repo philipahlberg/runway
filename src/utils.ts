@@ -23,14 +23,43 @@ export function decode(str: string): string {
   return decodeURIComponent(str);
 }
 
-export function pushState(path: string): void {
-  history.pushState(null, '', path);
+export interface State {
+  path: string;
+  search: string;
+  hash: string;
 }
 
-export function replaceState(path: string): void {
-  history.replaceState(null, '', path);
+export function pushState(state: State): void {
+  const search = state.search.length > 0
+    ? `?${state.search}`
+    : '';
+
+  const hash = state.hash.length > 0
+    ? `#${state.hash}`
+    : '';
+
+  history.pushState(null, '', `${state.path}${search}${hash}`);
+}
+
+export function replaceState(state: State): void {
+  const search = state.search.length > 0
+    ? `?${state.search}`
+    : '';
+
+  const hash = state.hash.length > 0
+    ? `#${state.hash}`
+    : '';
+
+  history.replaceState(null, '', `${state.path}${search}${hash}`);
 }
 
 export function popState(n: number = 1): void {
   history.go(-n);
+}
+
+export function encodeQuery(query: Record<string, string>): string {
+  return Object
+    .entries(query)
+    .map(([key, value]) => `${key}=${value}`)
+    .join('&');
 }

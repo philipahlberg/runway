@@ -47,3 +47,8 @@ export interface SearchResult {
   routes: Route[];
   path: string;
 }
+
+export interface NavigationOptions {
+  query?: Record<string, string>,
+  hash?: string;
+}
