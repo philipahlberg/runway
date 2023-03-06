@@ -1,4 +1,4 @@
 export class StaticComponent extends HTMLElement {
-    foo?: string;
+	foo?: string;
 }
-customElements.define('static-component', StaticComponent);
+customElements.define("static-component", StaticComponent);

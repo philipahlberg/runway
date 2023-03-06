@@ -1,208 +1,219 @@
-import { Router } from '../../src/Router';
-import { StaticComponent } from './StaticComponent.js';
+import type { Snapshot } from "../../src";
+import { Router } from "../../src/Router";
+import { StaticComponent } from "./StaticComponent.js";
 
-declare const expect: any;
+declare const expect: Chai.ExpectStatic;
 
-const div = () => document.createElement('div');
+const div = () => document.createElement("div");
 
-describe('Router', () => {
-  it('does not render before `connect` has been called', () => {
-    const router = new Router({
-      root: '/',
-      routes: [
-        {
-          path: '',
-          component: StaticComponent,
-        }
-      ],
-    });
-    expect(router.isConnected).to.equal(false);
-  });
+const blackBox = <T>(): T | null => null;
 
-  it('connects the router to the DOM', async () => {
-    const router = new Router({
-      root: '/',
-      routes: [
-        {
-          path: '',
-          component: StaticComponent,
-        }
-      ]
-    });
+describe("Router", () => {
+	it("does not render before `connect` has been called", () => {
+		const router = new Router({
+			root: "/",
+			routes: [
+				{
+					path: "",
+					component: StaticComponent,
+				},
+			],
+		});
+		expect(router.isConnected).to.equal(false);
+	});
 
-    const outlet = div();
-    await router.connect(outlet);
-    await router.push('/');
-    const children = Array.from(outlet.children);
-    expect(children.length).to.equal(1);
-    expect(router.isConnected).to.equal(true);
-  });
+	it("connects the router to the DOM", async () => {
+		const router = new Router({
+			root: "/",
+			routes: [
+				{
+					path: "",
+					component: StaticComponent,
+				},
+			],
+		});
 
-  it('removes the previously rendered views', async () => {
-    const router = new Router({
-      root: '/',
-      routes: [
-        {
-          path: '',
-          component: StaticComponent,
-        }
-      ],
-    });
+		const outlet = div();
+		await router.connect(outlet);
+		await router.push("/");
+		const children = Array.from(outlet.children);
+		expect(children.length).to.equal(1);
+		expect(router.isConnected).to.equal(true);
+	});
 
-    const outlet = div();
-    await router.connect(outlet);
-    await router.push('/');
-    expect(outlet.firstChild).to.exist;
-    router.disconnect();
-    expect(outlet.firstChild).to.be.null;
-  });
+	it("removes the previously rendered views", async () => {
+		const router = new Router({
+			root: "/",
+			routes: [
+				{
+					path: "",
+					component: StaticComponent,
+				},
+			],
+		});
 
-  it('renders a component', async () => {
-    const router = new Router({
-      root: '/',
-      routes: [
-        {
-          path: '',
-          component: StaticComponent,
-        }
-      ],
-    });
+		const outlet = div();
+		await router.connect(outlet);
+		await router.push("/");
+		expect(outlet.firstChild).to.exist;
+		router.disconnect();
+		expect(outlet.firstChild).to.be.null;
+	});
 
-    const outlet = div();
-    await router.connect(outlet);
-    await router.push('/');
+	it("renders a component", async () => {
+		const router = new Router({
+			root: "/",
+			routes: [
+				{
+					path: "",
+					component: StaticComponent,
+				},
+			],
+		});
 
-    expect(outlet.firstChild).to.be.instanceof(StaticComponent);
-  });
+		const outlet = div();
+		await router.connect(outlet);
+		await router.push("/");
 
-  it('resolves properties function as props', async () => {
-    const router = new Router({
-      root: '/',
-      routes: [{
-        path: '',
-        component: StaticComponent,
-        properties: () => ({ foo: 'bar' }),
-      }],
-    });
+		expect(outlet.firstChild).to.be.instanceof(StaticComponent);
+	});
 
-    const outlet = div();
-    await router.connect(outlet);
-    await router.push('/');
+	it("resolves properties function as props", async () => {
+		const router = new Router({
+			root: "/",
+			routes: [
+				{
+					path: "",
+					component: StaticComponent,
+					properties: () => ({ foo: "bar" }),
+				},
+			],
+		});
 
-    const component = outlet.firstChild as StaticComponent;
-    expect(component.foo).to.equal('bar');
-  });
+		const outlet = div();
+		await router.connect(outlet);
+		await router.push("/");
 
-  it('passes a route snapshot to the properties function', async () => {
-    let snapshot: any;
-    
-    const router = new Router({
-      root: '/',
-      routes: [{
-        path: '/:foo',
-        component: StaticComponent,
-        properties: ss => (snapshot = ss, {}),
-      }],
-    });
+		const component = outlet.firstChild as StaticComponent;
+		expect(component.foo).to.equal("bar");
+	});
 
-    const outlet = div();
-    await router.connect(outlet);
-    await router.push('/bar?foo=bar#hash');
+	it("passes a route snapshot to the properties function", async () => {
+		let snapshot: Snapshot | null = blackBox();
 
-    const { parameters, query, matched, hash } = snapshot!;
+		const router = new Router({
+			root: "/",
+			routes: [
+				{
+					path: "/:foo",
+					component: StaticComponent,
+					properties: (s) => {
+						snapshot = s;
+						return {};
+					},
+				},
+			],
+		});
 
-    expect(parameters.get('foo')).to.equal('bar');
-    expect(query.get('foo')).to.equal('bar');
-    expect(matched).to.be.a('string');
-    expect(matched).to.equal('/bar');
-    expect(hash).to.be.a('string');
-    expect(hash).to.equal('hash');
-  });
+		const outlet = div();
+		await router.connect(outlet);
+		await router.push("/bar?foo=bar#hash");
 
-  it('nests components from nested routes', async () => {
-    const router = new Router({
-      root: '/',
-      routes: [{
-        path: '',
-        component: StaticComponent,
-        children: [{
-          path: ':param',
-          component: StaticComponent,
-        }],
-      }],
-    });
+		expect(snapshot?.parameters.get("foo")).to.equal("bar");
+		expect(snapshot?.query.get("foo")).to.equal("bar");
+		expect(snapshot?.matched).to.be.a("string");
+		expect(snapshot?.matched).to.equal("/bar");
+		expect(snapshot?.hash).to.equal("hash");
+	});
 
-    const outlet = div();
-    await router.connect(outlet);
-    await router.push('/123');
+	it("nests components from nested routes", async () => {
+		const router = new Router({
+			root: "/",
+			routes: [
+				{
+					path: "",
+					component: StaticComponent,
+					children: [
+						{
+							path: ":param",
+							component: StaticComponent,
+						},
+					],
+				},
+			],
+		});
 
-    const outer = outlet.firstChild;
-    const inner = outer?.firstChild;
+		const outlet = div();
+		await router.connect(outlet);
+		await router.push("/123");
 
-    expect(outer).to.be.instanceof(StaticComponent);
-    expect(inner).to.be.instanceof(StaticComponent);
-  });
+		const outer = outlet.firstChild;
+		const inner = outer?.firstChild;
 
-  it('respects route guards', async () => {
-    const router = new Router({
-      root: '/',
-      routes: [
-        {
-          path: '/',
-          component: StaticComponent,
-          guard: () => false,
-        }
-      ],
-    });
+		expect(outer).to.be.instanceof(StaticComponent);
+		expect(inner).to.be.instanceof(StaticComponent);
+	});
 
-    const outlet = div();
-    await router.connect(outlet);
-    await router.push('/');
+	it("respects route guards", async () => {
+		const router = new Router({
+			root: "/",
+			routes: [
+				{
+					path: "/",
+					component: StaticComponent,
+					guard: () => false,
+				},
+			],
+		});
 
-    const children = Array.from(outlet.children);
-    expect(children.length).to.equal(0);
-  });
+		const outlet = div();
+		await router.connect(outlet);
+		await router.push("/");
 
-  it('follows redirects', async () => {
-    const router = new Router({
-      root: '/',
-      routes: [
-        {
-          path: 'a',
-          redirect: 'b',
-        },
-        {
-          path: 'b',
-          component: StaticComponent,
-        },
-      ],
-    });
+		const children = Array.from(outlet.children);
+		expect(children.length).to.equal(0);
+	});
 
-    const outlet = div();
-    await router.connect(outlet);
-    await router.push('/a');
+	it("follows redirects", async () => {
+		const router = new Router({
+			root: "/",
+			routes: [
+				{
+					path: "a",
+					redirect: "b",
+				},
+				{
+					path: "b",
+					component: StaticComponent,
+				},
+			],
+		});
 
-    expect(location.pathname).to.equal('/b');
-  });
+		const outlet = div();
+		await router.connect(outlet);
+		await router.push("/a");
 
-  it('ignores query and hash', async () => {
-    const router = new Router({
-      root: '/',
-      routes: [
-        {
-          path: '/a',
-          component: StaticComponent,
-        },
-      ],
-    });
+		expect(location.pathname).to.equal("/b");
+	});
 
-    const outlet = div();
-    await router.connect(outlet);
-    await router.push('/a?q=123#hash');
+	it("ignores query and hash", async () => {
+		const router = new Router({
+			root: "/",
+			routes: [
+				{
+					path: "/a",
+					component: StaticComponent,
+				},
+			],
+		});
 
-    expect(outlet.firstChild).to.exist;
-    expect(location.pathname).to.equal('/a');
-    expect(location.search).to.equal('?q=123');
-    expect(location.hash).to.equal('#hash');
-  });
+		const outlet = div();
+		await router.connect(outlet);
+		await router.push("/a?q=123#hash");
+
+		expect(outlet.firstChild).to.exist;
+		expect(location.pathname).to.equal("/a");
+		expect(location.search).to.equal("?q=123");
+		expect(location.hash).to.equal("#hash");
+	});
 });

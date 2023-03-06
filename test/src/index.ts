@@ -1,3 +1,3 @@
-import './Route.spec.js';
-import './RouterLink.spec.js';
-import './Router.spec.js';
+import "./Route.spec.js";
+import "./RouterLink.spec.js";
+import "./Router.spec.js";

@@ -21,8 +21,9 @@
   ],
   "scripts": {
     "build": "rollup -c",
+    "check": "tsc --noEmit && rome ci src && rome ci test",
     "test": "rollup -c test/rollup.config.js && karma start ./karma.conf.cjs",
-    "format": "prettier src/**/*.ts --write",
+    "format": "rome format src --write && rome format test --write",
     "example": "npx serve example/"
   },
   "devDependencies": {
@@ -38,8 +39,8 @@
     "karma-firefox-launcher": "^2.1.1",
     "karma-mocha": "^2.0.1",
     "mocha": "^10.2.0",
-    "prettier": "^2.3.2",
     "rollup": "^3.18.0",
+    "rome": "^11.0.0",
     "tslib": "^2.5.0",
     "typescript": "^4.9.5"
   },
