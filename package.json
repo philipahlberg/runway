@@ -1,6 +1,7 @@
 {
   "name": "runway",
   "version": "0.3.0",
+  "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -20,13 +21,13 @@
   ],
   "scripts": {
     "build": "rollup -c",
-    "test": "rollup -c test/rollup.config.js && karma start ./karma.conf.js",
+    "test": "rollup -c test/rollup.config.js && karma start ./karma.conf.cjs",
     "format": "prettier src/**/*.ts --write",
     "example": "npx serve example/"
   },
   "devDependencies": {
-    "@rollup/plugin-node-resolve": "^13.0.0",
-    "@rollup/plugin-typescript": "^8.2.1",
+    "@rollup/plugin-node-resolve": "^15.0.1",
+    "@rollup/plugin-typescript": "^11.0.0",
     "@types/chai": "^4.2.21",
     "@types/mocha": "^8.2.3",
     "@types/node": "^16.3.1",
@@ -38,7 +39,7 @@
     "karma-mocha": "^2.0.1",
     "mocha": "^9.0.2",
     "prettier": "^2.3.2",
-    "rollup": "^2.53.1",
+    "rollup": "^3.18.0",
     "tslib": "^2.5.0",
     "typescript": "^4.9.5"
   },
