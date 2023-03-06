@@ -17,13 +17,17 @@ import Component from './my-component.js';
 // 2. Define your routes
 const routes = [
   {
-    path: '/foo',
+    path: 'foo',
     component: Component
   }
 ];
 
 // 3. Create the router
-const router = new Router(routes);
+const router = new Router({
+  // all paths will be prefixed with `/`
+  root: '/',
+  routes,
+});
 
 // 4. Connect the router to an element
 router.connect(document.body);
@@ -35,25 +39,31 @@ To visit `'/foo'`, you can:
 
 If you need your route to match a pattern instead of a path, you can use Express-like named parameters in the path:
 ```js
-const router = new Router([
-  {
-    path: '/:param',
-    component: Component
-  }
-]);
+const router = new Router({
+  root: '/',
+  routes: [
+    {
+      path: ':param',
+      component: Component
+    }
+  ],
+});
 ```
 
 When using a named parameter, you can access the value by utilizing the `properties` function option:
 ```js
-const router = new Router([
-  {
-    path: '/:param',
-    component: Component,
-    properties: ({ parameters }) => ({
-      myProp: parameters.get('param')
-    })
-  }
-]);
+const router = new Router({
+  root: '/',
+  routes: [
+    {
+      path: ':param',
+      component: Component,
+      properties: ({ parameters }) => ({
+        myProp: parameters.get('param')
+      }),
+    },
+  ],
+});
 ```
 In this example, when an instance of `Component` is created, the property `myProp` is set on the instance with the value of the `param` parameter.
 If the user visited `/foo`, the value of `parameters.get('param')` would be `foo`.
@@ -61,33 +71,39 @@ The `properties` function also receives other key details of the activated route
 
 A route can also redirect to another path instead of rendering a component:
 ```js
-const router = new Router([
-  {
-    path: '/foo',
-    redirect: '/bar'
-  },
-  {
-    path: '/bar',
-    component: DashboardComponent
-  }
-]);
+const router = new Router({
+  root: '/',
+  routes: [
+    {
+      path: 'foo',
+      redirect: 'bar'
+    },
+    {
+      path: 'bar',
+      component: DashboardComponent
+    },
+  ],
+});
 ```
 Then, if the user visits `/foo`, they will automatically be redirected to `/bar` and the corresponding route will be rendered instead.
 
 Routes can be nested inside eachother, so that components are nested when rendered:
 ```js
-const router = new Router([
-  {
-    path: '/foo',
-    component: ComponentA,
-    children: [
-      {
-        path: 'bar',
-        component: ComponentB
-      }
-    ]
-  }
-]);
+const router = new Router({
+  root: '/',
+  routes: [
+    {
+      path: 'foo',
+      component: ComponentA,
+      children: [
+        {
+          path: 'bar',
+          component: ComponentB
+        },
+      ],
+    },
+  ],
+});
 ```
 When the user visits `/foo/bar`, the components will be rendered like so:
 ```html
@@ -100,19 +116,22 @@ Note that nested routes should not have a leading slash.
 
 If you need your route to conditionally match based on some external value, use a route guard to determine if it should match:
 ```js
-const router = new Router([
-  {
-    path: '/admin',
-    component: AdminComponent,
-    guard: () => user.isAdmin
-  }
-]);
+const router = new Router({
+  root: '/',
+  routes: [
+    {
+      path: 'admin',
+      component: AdminComponent,
+      guard: () => user.isAdmin,
+    },
+  ],
+});
 ```
 This way, the route will be skipped if the guard function returns `false`.
 
 To see more features, take a look at the `/example` directory or try it in action:
 ```console
-yarn run example
+npm run example
 ```
 
 ## API
@@ -127,15 +146,22 @@ Exported as `Router` and `default`.
 - **disconnect(): void**
 
   Disconnect the router from the DOM.
-- **push(path: string): Promise\<void>**
+- **push(path: string, options?: NavigationOptions): Promise\<void>**
 
   Push a new entry onto the history stack. Resolves once every component has been loaded and connected.
-- **replace(path: string): Promise\<void>**
+- **replace(path: string, options?: NavigationOptions): Promise\<void>**
 
   Replace the current entry in the history stack.
 - **pop(n: number): void**
 
   Pop the top `n` entries in the history stack.
+
+### `interface NavigationOptions`
+- **query?: Record<string, string>**
+  The search query that should be appended to the path, expressed as an object mapping keys to values.
+
+- **hash?: string**
+  The hash that should be appended to the path.
 
 ### `interface RouteOptions`
 - **path: string**
