@@ -5,16 +5,6 @@ declare const expect: any;
 
 const div = () => document.createElement('div');
 
-// const createSpy = () => new Proxy({
-//   calls: [],
-// }, {
-//   apply(target: any, self: any, args: any[]) {
-//     target.calls.push({
-//       arguments: args,
-//     });
-//   }
-// });
-
 describe('Router', () => {
   it('does not render before `connect` has been called', () => {
     const router = new Router({
@@ -42,6 +32,7 @@ describe('Router', () => {
 
     const outlet = div();
     await router.connect(outlet);
+    await router.push('/');
     const children = Array.from(outlet.children);
     expect(children.length).to.equal(1);
     expect(router.isConnected).to.equal(true);

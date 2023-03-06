@@ -1,7 +1,7 @@
 import { Router } from '../../src/Router';
 import { RouterLink } from '../../src/RouterLink';
 
-declare const expect: any;
+declare const expect: Chai.ExpectStatic;
 
 const a = (href: string) => {
   const el = document.createElement('a');
@@ -12,30 +12,29 @@ const a = (href: string) => {
 const div = () => document.createElement('div');
 const connect = (element: HTMLElement) => document.body.appendChild(element);
 
-describe('RouterLink', async () => {
+const setup = async () => {
   const router = new Router({
     root: '/',
     routes: [],
   });
-  await router.connect(div());
-
-  beforeEach(async () => {
-    await router.push('/');
-  });
-
-  after(() => {
-    router.disconnect();
-  });
-
-  it('can be defined', () => {
+  if (customElements.get('router-link') === undefined) {
     customElements.define('router-link', RouterLink);
-  });
+  }
+  RouterLink.use(router);
+  await router.connect(div());
+  await router.push('/');
+  return router;
+};
 
-  it('can be configured to use a router', () => {
-    RouterLink.use(router);
+const nextAnimationFrame = (): Promise<void> => {
+  return new Promise((resolve) => {
+    window.requestAnimationFrame(() => resolve());
   });
+}
 
+describe('RouterLink', () => {
   it('applies active attribute when it matches', async () => {
+    const router = await setup();
     const link = new RouterLink();
     link.appendChild(a('/abc'));
     connect(link);
@@ -46,21 +45,25 @@ describe('RouterLink', async () => {
     await router.push('/abc');
 
     expect(link.active).to.equal(true);
+    router.disconnect();
   });
 
   it('clicking the link triggers navigation', async () => {
+    const router = await setup();
     const link = new RouterLink();
     link.appendChild(a('/abc'));
     connect(link);
 
     link.click();
-    await Promise.resolve();
+    await nextAnimationFrame();
 
     expect(location.pathname).to.equal('/abc');
     expect(link.active).to.equal(true);
+    router.disconnect();
   });
 
   it('disabling the link prevents navigation', async () => {
+    const router = await setup();
     const pathname = location.pathname;
 
     const link = new RouterLink();
@@ -69,25 +72,29 @@ describe('RouterLink', async () => {
     connect(link);
 
     link.click();
-    await Promise.resolve();
+    await nextAnimationFrame();
 
     expect(location.pathname).to.equal(pathname);
     expect(pathname).to.not.equal('/abc');
+    router.disconnect();
   });
 
   it('intercepts clicks on child anchor', async () => {
+    const router = await setup();
     const link = new RouterLink();
     const anchor = a('/abc');
     link.appendChild(anchor);
     connect(link);
 
     anchor.click();
-    await Promise.resolve();
+    await nextAnimationFrame();
 
     expect(link.active).to.equal(true);
+    router.disconnect();
   });
 
   it('can be configured to match exactly', async () => {
+    const router = await setup();
     const link = new RouterLink();
     link.appendChild(a('/abc'));
     link.to = '/abc';
@@ -99,5 +106,6 @@ describe('RouterLink', async () => {
 
     await router.push('/abcd');
     expect(link.active).to.equal(false);
+    router.disconnect();
   });
 });

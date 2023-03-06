@@ -8,16 +8,20 @@ export class Router extends EventTarget {
   private elements: HTMLElement[];
   private activeRoutes: Route[];
   private rootElement?: HTMLElement;
-  private root: string;
+  private _root: string;
 
   public constructor(options: RouterOptions) {
     super();
     this.isConnected = false;
     this.elements = [];
     this.activeRoutes = [];
-    this.root = options.root;
-    this.routes = options.routes.map((option): Route => new Route(option));
+    this._root = options.root;
+    this.routes = options.routes.map((option): Route => Route.createPrefixedRoute(option, options.root));
     this.onPopstate = this.onPopstate.bind(this);
+  }
+
+  public root(): string {
+    return this._root;
   }
 
   /**
@@ -29,16 +33,12 @@ export class Router extends EventTarget {
     window.addEventListener('popstate', this.onPopstate);
     this.isConnected = true;
     this.rootElement = rootElement;
-    if (!decode(location.pathname).startsWith(this.root)) {
-      await this.render([]);
-      this.emit('change');
-      return;
-    }
-    const to = decode(location.pathname).replace(this.root, '');
-    const { routes, path } = this.match(to);
+    const to = location.pathname.replace(this.root().substring(1), '');
+    const decoded = decode(to);
+    const { routes, path } = this.match(decoded);
     const url = new URL(location.toString());
     replaceState({
-      path: join(this.root, path),
+      path,
       search: url.search.substring(1),
       hash: url.hash.substring(1),
     });
@@ -66,7 +66,7 @@ export class Router extends EventTarget {
     const decoded = decode(to);
     const { routes, path } = this.match(decoded);
     pushState({
-      path: join(this.root, path),
+      path,
       search: encodeQuery(options.query ?? {}),
       hash: options.hash ?? '',
     });
@@ -81,7 +81,7 @@ export class Router extends EventTarget {
     const decoded = decode(to);
     const { routes, path } = this.match(decoded);
     replaceState({
-      path: join(this.root, path),
+      path,
       search: encodeQuery(options.query ?? {}),
       hash: options.hash ?? '',
     });
@@ -104,13 +104,13 @@ export class Router extends EventTarget {
     // TODO: is this ever true?
     if (to !== path) {
       replaceState({
-        path: join(this.root, path),
+        path,
         search: '',
         hash: '',
       });
     }
-    this.emit('change');
     this.render(routes);
+    this.emit('change');
   }
 
   private search(
@@ -147,7 +147,7 @@ export class Router extends EventTarget {
    * The resulting path and the matched elements are returned.
    */
   private match(path: string): SearchResult {
-    return this.search(path, this.routes, []);
+    return this.search(join(this.root(), path), this.routes, []);
   }
 
   /**

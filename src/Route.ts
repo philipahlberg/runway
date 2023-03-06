@@ -36,14 +36,14 @@ export class Route {
   public slot?: string;
   public children?: Route[];
 
-  private static createChildRoute(options: RouteOptions, parent: Route): Route {
+  public static createPrefixedRoute(options: RouteOptions, prefix: string): Route {
     if (options.path === '') {
-      options.path = parent.path;
+      options.path = prefix;
     } else {
-      options.path = join(parent.path, options.path);
+      options.path = join(prefix, options.path);
     }
     if (isRedirect(options)) {
-      options.redirect = join(parent.path, options.redirect);
+      options.redirect = join(prefix, options.redirect);
     }
     return new Route(options);
   }
@@ -72,7 +72,7 @@ export class Route {
       }
 
       this.children = (options.children || []).map(
-        (child): Route => Route.createChildRoute(child, this)
+        (child): Route => Route.createPrefixedRoute(child, this.path)
       );
 
       this.properties = options.properties || defaultPropertiesFn;

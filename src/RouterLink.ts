@@ -1,5 +1,5 @@
 import { Router } from './Router';
-import { decode } from './utils';
+import { decode, join } from './utils';
 
 export class RouterLink extends HTMLElement {
   public static observedAttributes = ['disabled', 'to'];
@@ -101,7 +101,8 @@ export class RouterLink extends HTMLElement {
     if (to === null) return false;
 
     if (to.startsWith('/')) {
-      return this.exact ? path === to : path.startsWith(to);
+      const actual = join(this.router.root(), to);
+      return this.exact ? path === actual : path.startsWith(actual);
     } else {
       return path.endsWith(to);
     }
