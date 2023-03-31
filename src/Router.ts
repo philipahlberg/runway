@@ -119,7 +119,7 @@ export class Router extends EventTarget {
 	}
 
 	private onPopstate(): void {
-		const to = decode(location.pathname);
+		const to = location.pathname.replace(this.root().substring(1), "");
 		const { routes, path } = this.match(to);
 		// TODO: is this ever true?
 		if (to !== path) {
